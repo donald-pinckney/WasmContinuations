@@ -1,0 +1,32 @@
+[submodule "c-stack"]
+	path = c-stack
+	url = https://github.com/donald-pinckney/c-stack
+	branch = conts
+[submodule "cranelift"]
+	path = cranelift
+	url = https://github.com/donald-pinckney/cranelift
+	branch = conts
+[submodule "spec"]
+	path = spec
+	url = https://github.com/donald-pinckney/spec
+[submodule "wabt-rs"]
+	path = wabt-rs
+	url = https://github.com/donald-pinckney/wabt-rs
+	branch = conts
+[submodule "wasmparser.rs"]
+	path = wasmparser.rs
+	url = https://github.com/donald-pinckney/wasmparser.rs
+	branch = conts
+[submodule "wasmtime"]
+	path = wasmtime
+	url = https://github.com/donald-pinckney/wasmtime
+	branch = conts
+[submodule "reference-types"]
+	path = reference-types
+	url = https://github.com/WebAssembly/reference-types
+[submodule "swasm"]
+	path = swasm
+	url = https://github.com/donald-pinckney/swasm
+[submodule "wabt"]
+	path = wabt
+	url = https://github.com/WebAssembly/wabt
