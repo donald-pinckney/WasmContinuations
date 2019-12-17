@@ -9,10 +9,6 @@
 [submodule "spec"]
 	path = spec
 	url = https://github.com/donald-pinckney/spec
-[submodule "wabt-rs"]
-	path = wabt-rs
-	url = https://github.com/donald-pinckney/wabt-rs
-	branch = conts
 [submodule "wasmparser.rs"]
 	path = wasmparser.rs
 	url = https://github.com/donald-pinckney/wasmparser.rs
@@ -30,3 +26,7 @@
 [submodule "wabt"]
 	path = wabt
 	url = https://github.com/WebAssembly/wabt
+[submodule "wabt-rs"]
+	path = wabt-rs
+	url = https://github.com/donald-pinckney/wabt-rs
+	branch = conts
