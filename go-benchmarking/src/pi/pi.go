@@ -11,6 +11,7 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"time"
 )
 
 func main() {
@@ -27,7 +28,13 @@ func main() {
 		panic("Usage: ./pi numTerms:int numThreads:int")
 	}
 
+	start := time.Now()
+
 	fmt.Println(pi(numTerms, numThreads))
+
+	dt := time.Since(start)
+
+	fmt.Fprintln(os.Stderr, dt.Nanoseconds())
 }
 
 // pi launches n goroutines to compute an
