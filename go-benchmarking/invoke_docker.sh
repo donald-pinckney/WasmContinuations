@@ -8,5 +8,5 @@
 # 3. how many samples to take for each
 
 docker build -t my-golang-app . > /dev/null
-docker run -it --rm --cpuset-cpus="0" my-golang-app $1 $2 $3
-docker rmi my-golang-app > /dev/null
+docker run -it --rm --cpuset-cpus="0" my-golang-app ./docker_main.sh $1 $2 $3 $4
+# docker rmi my-golang-app > /dev/null

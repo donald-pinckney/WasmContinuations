@@ -18,7 +18,7 @@ func main() {
 	if len(os.Args) != 3 {
 		panic("Usage: ./pi numTerms:int numThreads:int")
 	}
-	
+
 	numTerms, err := strconv.Atoi(os.Args[1])
 	if err != nil {
 		panic("Usage: ./pi numTerms:int numThreads:int")
@@ -38,9 +38,9 @@ func main() {
 }
 
 // pi launches n goroutines to compute an
-// approximation of pi.
+// approximation of pi
 func pi(numTerms int, numThreads int) float64 {
-	if numTerms % numThreads != 0 {
+	if numTerms%numThreads != 0 {
 		panic("Error, numTerms must be divisible by numThreads")
 	}
 
@@ -64,21 +64,19 @@ func terms(ch chan float64, threadId int, from int, to int) {
 	f := 0.0
 	for k := from; k <= to; k++ {
 		f += term(float64(k))
+		// fmt.Println(k)
 	}
 	ch <- f
 }
-
 
 func term(k float64) float64 {
 	return 4 * math.Pow(-1, k) / (2*k + 1)
 }
 
-
-
 // min returns the smaller of x or y.
 func min(x, y int) int {
-    if x > y {
-        return y
-    }
-    return x
+	if x > y {
+		return y
+	}
+	return x
 }

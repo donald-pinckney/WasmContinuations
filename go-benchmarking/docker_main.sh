@@ -3,7 +3,8 @@
 # THIS RUNS GUEST-SIDE
 
 # This function takes a command to run ($1, $cmd) and an integer number of trials to perform ($2, $numSamples).
-# It runs $1 exactly $2 times, and concatenates the STDOUT of $1 each time into a string separated by ',' and started by an initial ','.
+# It runs $1 exactly $2 times, and concatenates the STDERR of $1 each time into a string separated by ',' and started by an initial ','.
+# STDOUT is discarded.
 # The typical use case assumes that $1 outputs only it's own running time to STDOUT.
 function sample {
     cmd=$1
@@ -35,13 +36,18 @@ function experiment {
 }
 
 
+# Make sure that the bin directory exists and is empty
 mkdir -p bin/
 rm bin/* 2> /dev/null
 
 # Build native pi, this is now in bin/pi
 go install pi 
 
-experiment "bin/pi" $1 $2 $3
+# Build wasm pi, this is now in bin/js_wasm/pi
+GOOS=js GOARCH=wasm go install pi
+
+# experiment "bin/pi" $1 $2 $3
+experiment $1 $2 $3 $4
 
 
 # bin/pi 1000 10
