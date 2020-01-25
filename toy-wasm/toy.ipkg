@@ -1,0 +1,9 @@
+package toy
+
+pkgs = contrib, baseline
+
+-- modules = Test.Stuff
+
+executable = toyc
+main = Main
+-- tests = Test.Stuff.testMain
