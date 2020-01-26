@@ -212,3 +212,9 @@ interp_module mod@(MkWasmModule funcs start) = do
     if length (paramTypes start_f) /= 0
         then Left "Start function should take no arguments"
         else interp_call mod start_f []
+
+public export
+exec_module : WasmModule -> IO ()
+exec_module x = case interp_module x of
+    (Left l) => putStrLn $ "Error: " ++ l
+    (Right r) => putStrLn (show r)

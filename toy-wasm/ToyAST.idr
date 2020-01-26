@@ -75,6 +75,12 @@ implementation Eq Type' where
     TypeInt == TypeDouble = False
 
 export
+implementation Eq Value where
+    (ValueInt x) == (ValueInt y) = x == y
+    (ValueFloat x) == (ValueFloat y) = x == y
+    _ == _ = False
+
+export
 implementation Show Type' where
     show TypeInt = "int"
     show TypeDouble = "float"

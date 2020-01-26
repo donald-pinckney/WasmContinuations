@@ -169,3 +169,9 @@ mutual
 public export
 interp_module : Module nmfns -> Either String Value
 interp_module (MkModule (main_f :: fs)) = interp_call (MkModule (main_f :: fs)) main_f []
+
+public export
+exec_module : Module nmfns -> IO ()
+exec_module x = case interp_module x of
+    (Left l) => putStrLn $ "Error: " ++ l
+    (Right r) => putStrLn (show r)

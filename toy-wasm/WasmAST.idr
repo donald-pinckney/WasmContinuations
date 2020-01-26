@@ -81,6 +81,13 @@ implementation Eq WasmType where
     _ == _ = False
 
 export
+implementation Eq WasmValue where
+    (WasmValueI64 x) == (WasmValueI64 y) = x == y
+    (WasmValueF64 x) == (WasmValueF64 y) = x == y
+    (WasmValueI32 x) == (WasmValueI32 y) = x == y
+    _ == _ = False
+
+export
 implementation Show WasmType where
     show WasmTypeI64 = "i64"
     show WasmTypeI32 = "i32"

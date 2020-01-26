@@ -2,8 +2,8 @@ package toy
 
 pkgs = contrib, baseline
 
--- modules = Test.Stuff
+modules = Test.Toy, Test.Wasm
 
 executable = toyc
 main = Main
--- tests = Test.Stuff.testMain
+tests = Test.Toy.testMain, Test.Wasm.testMain
