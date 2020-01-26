@@ -3,6 +3,8 @@ module ToyAST
 import Data.Fin
 import Data.Vect
 
+%default covering
+
 public export
 data Value = ValueInt Int | ValueFloat Double
 

@@ -4,6 +4,8 @@ import ToyAST
 import Data.Vect
 import Data.Fin
 
+%default covering
+
 public export
 Result : Type -> Type
 Result t = Either String t

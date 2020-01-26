@@ -1,20 +1,23 @@
 module WasmAST
 
+%default covering
 
 public export
-data WasmType = WasmTypeI64 | WasmTypeF64
+data WasmType = WasmTypeI64 | WasmTypeF64 | WasmTypeI32
 
 public export
-data WasmValue = WasmValueI64 Int | WasmValueF64 Double
+data WasmValue = WasmValueI64 Int | WasmValueF64 Double | WasmValueI32 Int
 
 export
 wasmTypeOfWasmValue : WasmValue -> WasmType
 wasmTypeOfWasmValue (WasmValueI64 x) = WasmTypeI64
+wasmTypeOfWasmValue (WasmValueI32 x) = WasmTypeI32
 wasmTypeOfWasmValue (WasmValueF64 x) = WasmTypeF64
 
 public export
 idrisTypeOfWasmType : WasmType -> Type
 idrisTypeOfWasmType WasmTypeI64 = Int
+idrisTypeOfWasmType WasmTypeI32 = Int
 idrisTypeOfWasmType WasmTypeF64 = Double
 
 public export
@@ -33,14 +36,14 @@ data WasmInstr =  WasmInstrConst WasmValue
                 | WasmInstrI64Mul
                 | WasmInstrI64Div_s
                 | WasmInstrI64Rem_s
-                | WasmInstrI64And
-                | WasmInstrI64Or
-                | WasmInstrI64Eqz
+                | WasmInstrI32And
+                | WasmInstrI32Or
+                | WasmInstrI32Eqz
+                | WasmInstrI32Eq
                 | WasmInstrF64Add
                 | WasmInstrF64Sub
                 | WasmInstrF64Mul
                 | WasmInstrF64Div
-                | WasmInstrF64Eqz
                 | WasmInstrI64Eq
                 | WasmInstrI64Lt_s
                 | WasmInstrI64Gt_s
@@ -51,6 +54,7 @@ data WasmInstr =  WasmInstrConst WasmValue
                 | WasmInstrF64Gt
                 | WasmInstrF64Le
                 | WasmInstrF64Ge
+                | WasmInstrWrapI64ToI32
 
 public export
 record WasmFunction where
@@ -71,17 +75,19 @@ record WasmModule where
 
 export
 implementation Eq WasmType where
-    WasmTypeF64 == WasmTypeI64 = False
     WasmTypeF64 == WasmTypeF64 = True
     WasmTypeI64 == WasmTypeI64 = True
-    WasmTypeI64 == WasmTypeF64 = False
+    WasmTypeI32 == WasmTypeI32 = True
+    _ == _ = False
 
 export
 implementation Show WasmType where
     show WasmTypeI64 = "i64"
+    show WasmTypeI32 = "i32"
     show WasmTypeF64 = "f64"
 
 export
 implementation Show WasmValue where
     show (WasmValueI64 x) = show x
+    show (WasmValueI32 x) = show x
     show (WasmValueF64 x) = show x
