@@ -55,6 +55,9 @@ data WasmInstr =  WasmInstrConst WasmValue
                 | WasmInstrF64Le
                 | WasmInstrF64Ge
                 | WasmInstrWrapI64ToI32
+                | WasmInstrI64Shr_u
+                | WasmInstrI64And
+
 
 public export
 record WasmFunction where
@@ -103,3 +106,8 @@ implementation Show WasmValue where
 export
 implementation Show WasmFunction where
     show s = "[func]"
+
+export
+implementation Eq WasmInstr where
+    (WasmInstrConst x) == (WasmInstrConst y) = x == y
+    _ == _ = False

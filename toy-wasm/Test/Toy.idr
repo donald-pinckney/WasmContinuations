@@ -48,11 +48,11 @@ testVars : IO ()
 testVars = assert_interp varsProg (ValueInt 4)
 
 export
-hailstone_iter : Module 2
-hailstone_iter = MkModule [
+hailstone_iter : Int -> Module 2
+hailstone_iter k = MkModule [
     MkFuncDef TypeInt [] (
-        -- ExprCall 1 [ExprValue (ValueInt 10000000)]
-        ExprCall 1 [ExprValue (ValueInt 1000)]
+        -- ExprCall 1 [ExprValue (ValueInt 100000000)]
+        ExprCall 1 [ExprValue (ValueInt k)]
     ),
     MkFuncDef TypeInt [TypeInt] (
         ExprDeclareVar TypeInt (ExprValue (ValueInt 0)) $ -- hailstone count
@@ -81,11 +81,11 @@ hailstone_iter = MkModule [
 ]
 
 export
-hailstone_rec : Module 2
-hailstone_rec = MkModule [
+hailstone_rec : Int -> Module 2
+hailstone_rec k = MkModule [
     MkFuncDef TypeInt [] (
-        -- ExprCall 1 [ExprValue (ValueInt 10000000)]
-        ExprCall 1 [ExprValue (ValueInt 1000)]
+        -- ExprCall 1 [ExprValue (ValueInt 100000000)]
+        ExprCall 1 [ExprValue (ValueInt k)]
     ),
     MkFuncDef TypeInt [TypeInt] (
         ExprDeclareVar TypeInt (ExprValue (ValueInt 0)) $ -- hailstone count
@@ -111,11 +111,11 @@ hailstone_rec = MkModule [
 ]
 
 testHailstone_iter : IO ()
-testHailstone_iter = assert_interp hailstone_iter (ValueInt 59542)
+testHailstone_iter = assert_interp (hailstone_iter 1000) (ValueInt 59542)
 
 export
 testHailstone_rec : IO ()
-testHailstone_rec = assert_interp hailstone_rec (ValueInt 59542)
+testHailstone_rec = assert_interp (hailstone_rec 1000) (ValueInt 59542)
 
 export
 testMain : IO ()

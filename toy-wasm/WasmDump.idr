@@ -37,11 +37,11 @@ mutual
                                             "\n" ++ (tab_str tab) ++ ")"
     dump_instr tab (WasmInstrIf Nothing xs ys) = (tab_str tab) ++ "(if\n" ++
                                                 (tab_str (S tab)) ++ "(then\n" ++ dump_instrs (S (S tab)) xs ++
-                                                "\n" ++ (tab_str (S tab)) ++ ")\n" ++ (tab_str (S tab)) ++ "(else" ++
+                                                "\n" ++ (tab_str (S tab)) ++ ")\n" ++ (tab_str (S tab)) ++ "(else\n" ++
                                                     dump_instrs (S (S tab)) ys ++ "\n" ++ (tab_str (S tab)) ++ ")\n" ++ (tab_str tab) ++ ")"
     dump_instr tab (WasmInstrIf (Just t) xs ys) = (tab_str tab) ++ "(if (result " ++ dump_type t ++ ")\n" ++
                                                 (tab_str (S tab)) ++ "(then\n" ++ dump_instrs (S (S tab)) xs ++
-                                                "\n" ++ (tab_str (S tab)) ++ ")\n" ++ (tab_str (S tab)) ++ "(else" ++
+                                                "\n" ++ (tab_str (S tab)) ++ ")\n" ++ (tab_str (S tab)) ++ "(else\n" ++
                                                     dump_instrs (S (S tab)) ys ++ "\n" ++ (tab_str (S tab)) ++ ")\n" ++ (tab_str tab) ++ ")"
     dump_instr tab (WasmInstrLoop Nothing xs) = (tab_str tab) ++ "(loop\n" ++
                                                 dump_instrs (S tab) xs ++
@@ -76,6 +76,9 @@ mutual
     dump_instr tab WasmInstrF64Le = (tab_str tab) ++ "f64.le"
     dump_instr tab WasmInstrF64Ge = (tab_str tab) ++ "f64.ge"
     dump_instr tab WasmInstrWrapI64ToI32 = (tab_str tab) ++ "i32.wrap_i64"
+    dump_instr tab WasmInstrI64Shr_u = (tab_str tab) ++ "i64.shr_u"
+    dump_instr tab WasmInstrI64And = (tab_str tab) ++ "i64.and"
+
 
     dump_instrs : Nat -> List WasmInstr -> String
     dump_instrs indent xs = join_by (map (dump_instr indent) xs) "\n"

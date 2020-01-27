@@ -67,14 +67,16 @@ compile_expr numBound (ExprUpdateVar var newExpr after) =
     let (n_instrs, numBound') = compile_expr numBound newExpr in
     let (a_instrs, numBound'') = compile_expr numBound' after in
     (n_instrs ++ (WasmInstrLocalSet (numBound' - (toIntNat $ finToNat var) - 1) :: a_instrs), numBound'')
-compile_expr numBound (ExprCall f args) = foldl (\(instrs,b),arg =>
-                                                        let (ins, b') = compile_expr b arg in
-                                                        (ins ++ instrs, b')
-                                                ) ([], numBound) args
+compile_expr numBound (ExprCall f args) =
+    let (args_ins, numBound') = foldl (\(instrs,b),arg =>
+                                        let (ins, b') = compile_expr b arg in
+                                        (ins ++ instrs, b')
+                                ) (the (List WasmInstr) [], numBound) args in
+    (args_ins ++ [WasmInstrCall (toIntNat $ finToNat f)], numBound')
 compile_expr numBound (ExprIf cond t true false) =
     let (cond_ins, numBound') = compile_expr numBound cond in
-    let (true_ins, numBound'') = compile_expr numBound' cond in
-    let (false_ins, numBound''') = compile_expr numBound'' cond in
+    let (true_ins, numBound'') = compile_expr numBound' true in
+    let (false_ins, numBound''') = compile_expr numBound'' false in
     (cond_ins ++ [WasmInstrIf (Just $ compile_type t) true_ins false_ins], numBound''')
 compile_expr numBound (ExprWhile cond body after) =
     let (cond_ins, numBound') = compile_expr numBound cond in
@@ -113,7 +115,9 @@ compile_expr numBound (ExprFMul x y) =
 compile_expr numBound (ExprIDiv x y) =
     let (xins, numBound') = compile_expr numBound x in
     let (yins, numBound'') = compile_expr numBound' y in
-    (xins ++ yins ++ [WasmInstrI64Div_s], numBound'')
+    if yins == [WasmInstrConst (WasmValueI64 2)]
+        then (xins ++ [WasmInstrConst (WasmValueI64 1), WasmInstrI64Shr_u], numBound'')
+        else (xins ++ yins ++ [WasmInstrI64Div_s], numBound'')
 compile_expr numBound (ExprFDiv x y) =
     let (xins, numBound') = compile_expr numBound x in
     let (yins, numBound'') = compile_expr numBound' y in
@@ -121,7 +125,9 @@ compile_expr numBound (ExprFDiv x y) =
 compile_expr numBound (ExprIMod x y) =
     let (xins, numBound') = compile_expr numBound x in
     let (yins, numBound'') = compile_expr numBound' y in
-    (xins ++ yins ++ [WasmInstrI64Rem_s], numBound'')
+    if yins == [WasmInstrConst (WasmValueI64 2)]
+        then (xins ++ [WasmInstrConst (WasmValueI64 1), WasmInstrI64And], numBound'')
+        else (xins ++ yins ++ [WasmInstrI64Rem_s], numBound'')
 compile_expr numBound (ExprIGT x y) =
     let (xins, numBound') = compile_expr numBound x in
     let (yins, numBound'') = compile_expr numBound' y in

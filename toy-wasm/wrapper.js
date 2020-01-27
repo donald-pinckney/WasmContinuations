@@ -11,7 +11,6 @@ var importObject = {
   }
 };
 
-WebAssembly.instantiate(fs.readFileSync('toy.wasm'), importObject).then(obj => {
-    // obj.instance.exports.logIt();
-    console.log("All done!");
-});
+WebAssembly.instantiate(fs.readFileSync('toy.wasm'), importObject);
+// WebAssembly.instantiate(fs.readFileSync('hail_iter.wasm'), importObject);
+// WebAssembly.instantiate(fs.readFileSync('hail_iter_heap.wasm'), importObject);
