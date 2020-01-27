@@ -23,14 +23,22 @@ assert_type WasmTypeF64 (WasmValueF64 x) = Right x
 assert_type t x = Left $ "Expected " ++ show t ++ " got " ++ show (wasmTypeOfWasmValue x) ++ " (" ++ show x ++ ")"
 
 public export
-lookup_list : Int -> List x -> Either String x
-lookup_list i [] = Left "Index out of bounds"
-lookup_list i (y :: xs) = if i == 0 then Right y else lookup_list (i-1) xs
+lookup_list_rec : Int -> List x -> Either String x
+lookup_list_rec i [] = Left "lookup_list: Index out of bounds"
+lookup_list_rec i (y :: xs) = if i == 0 then Right y else lookup_list_rec (i-1) xs
+
+public export
+lookup_list : Show x => Int -> List x -> Either String x
+lookup_list x xs = case lookup_list_rec x xs of
+    (Left l) => Left $ "lookup_list: Index " ++ show x ++ " out of bounds for list " ++ show xs
+    (Right r) => Right r
 
 public export
 update_list : Int -> x -> List x -> Either String (List x)
-update_list i y [] = Left "Index out of bounds"
-update_list i y (z :: xs) = if i == 0 then Right (y :: xs) else update_list (i-1) y xs
+update_list i y [] = Left "update_list: Index out of bounds"
+update_list i y (z :: xs) = if i == 0 then Right (y :: xs) else do
+    y_xs' <- update_list (i-1) y xs
+    pure (z :: y_xs')
 
 public export
 pop : List WasmValue -> Either String (WasmValue, List WasmValue)
@@ -53,6 +61,10 @@ record Label where
     arity : Int
     stackDepth : Int
     continuation : List WasmInstr
+
+public export
+implementation Show Label where
+    show s = "[label]"
 
 public export
 length : Maybe x -> Int
@@ -124,10 +136,12 @@ mutual
     interp_instr mod frame stack labels after WasmInstrDrop = do
         (v, stack') <- pop stack
         pure (frame, stack')
-    interp_instr mod frame stack labels after (WasmInstrLocalGet x) = Right (frame, !(lookup_list x frame) :: stack)
+    interp_instr mod frame stack labels after (WasmInstrLocalGet x) =
+        Right (frame, !(lookup_list x frame) :: stack)
     interp_instr mod frame stack labels after (WasmInstrLocalSet x) = do
         (v, stack') <- pop stack
-        Right (!(update_list x v frame), stack')
+        frame' <- update_list x v frame
+        Right (frame', stack')
     interp_instr mod frame stack labels after (WasmInstrBlock t instrs) = do
         let labels' = (MkLabel (length t) (length_list stack) after) :: labels
         interp_instrs mod frame stack labels' instrs
@@ -207,7 +221,7 @@ mutual
 
 public export
 interp_module : WasmModule -> Either String WasmValue
-interp_module mod@(MkWasmModule funcs start) = do
+interp_module mod@(MkWasmModule funcs start st) = do
     start_f <- lookup_list start funcs
     if length (paramTypes start_f) /= 0
         then Left "Start function should take no arguments"

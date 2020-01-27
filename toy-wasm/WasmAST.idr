@@ -70,6 +70,7 @@ record WasmModule where
     constructor MkWasmModule
     funcs : List WasmFunction
     start : Int
+    start_type : WasmType
     -- TODO: linear memory
 
 
@@ -98,3 +99,7 @@ implementation Show WasmValue where
     show (WasmValueI64 x) = show x
     show (WasmValueI32 x) = show x
     show (WasmValueF64 x) = show x
+
+export
+implementation Show WasmFunction where
+    show s = "[func]"

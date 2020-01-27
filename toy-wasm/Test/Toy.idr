@@ -16,27 +16,38 @@ assert_interp_fail m = case interp_module m of
     (Left err) => putStrLn "Test passed"
     (Right v) => putStrLn $ "Test failed, expected interpretation failure, received result: " ++ show v
 
+export
+toy1 : Module 0
+toy1 = MkModule [
+    MkFuncDef TypeInt [] (
+        ExprValue (ValueInt 3)
+    )
+]
+
 test1 : IO ()
-test1 =
-    let mod = MkModule [
-        MkFuncDef TypeInt [] (
-            ExprValue (ValueInt 3)
-        )
-    ] in
-    assert_interp mod (ValueInt 3)
+test1 = assert_interp toy1 (ValueInt 3)
+
+export
+varsProg : Module 0
+varsProg = MkModule [
+    MkFuncDef TypeInt [] (
+        {-
+            let x : Int = 3 + 6;
+            let y : Int = x - 5;
+            y = y + 1;
+            x % y
+        -}
+        ExprDeclareVar TypeInt (ExprIAdd (ExprValue (ValueInt 3)) (ExprValue (ValueInt 6))) $
+        ExprDeclareVar TypeInt (ExprISub (ExprVar 0) (ExprValue (ValueInt 5))) $
+        ExprUpdateVar 0 (ExprIAdd (ExprVar 0) (ExprValue (ValueInt 1))) $
+        ExprIMod (ExprVar 1) (ExprVar 0)
+    )
+]
 
 testVars : IO ()
-testVars =
-    let mod = MkModule [
-        MkFuncDef TypeInt [] (
-            ExprDeclareVar TypeInt (ExprIAdd (ExprValue (ValueInt 3)) (ExprValue (ValueInt 6))) $
-            ExprDeclareVar TypeInt (ExprISub (ExprVar 0) (ExprValue (ValueInt 5))) $
-            ExprUpdateVar 0 (ExprIAdd (ExprVar 0) (ExprValue (ValueInt 1))) $
-            ExprIMod (ExprVar 1) (ExprVar 0)
-        )
-    ] in
-    assert_interp mod (ValueInt 4)
+testVars = assert_interp varsProg (ValueInt 4)
 
+export
 hailstone_iter : Module 2
 hailstone_iter = MkModule [
     MkFuncDef TypeInt [] (
@@ -46,7 +57,7 @@ hailstone_iter = MkModule [
     MkFuncDef TypeInt [TypeInt] (
         ExprDeclareVar TypeInt (ExprValue (ValueInt 0)) $ -- hailstone count
         ExprDeclareVar TypeInt (ExprValue (ValueInt 1)) $ -- loop variable
-        ExprWhileNonZ (ExprILTE (ExprVar 0) (ExprVar 2)) ( -- while loop var <= argument
+        ExprWhile (ExprILTE (ExprVar 0) (ExprVar 2)) ( -- while loop var <= argument
             ExprUpdateVar 1 (ExprIAdd (ExprCall 2 [ExprVar 0]) (ExprVar 1)) $ -- update hailstone count
             ExprUpdateVar 0 (ExprIAdd (ExprVar 0) (ExprValue (ValueInt 1))) $ -- update loop variable
             ExprValue (ValueInt 42) -- this is discarded
@@ -55,9 +66,9 @@ hailstone_iter = MkModule [
     ),
     MkFuncDef TypeInt [TypeInt] (
         ExprDeclareVar TypeInt (ExprValue (ValueInt 0)) $ -- hailstone count
-        ExprWhileNonZ (ExprNot (ExprIEQ (ExprVar 1) (ExprValue (ValueInt 1)))) ( -- while loop var != 1
+        ExprWhile (ExprNot (ExprIEQ (ExprVar 1) (ExprValue (ValueInt 1)))) ( -- while loop var != 1
             ExprUpdateVar 0 (ExprIAdd (ExprVar 0) (ExprValue (ValueInt 1))) $ -- update hailstone count
-            ExprIfNonZ (ExprIEQ (ExprIMod (ExprVar 1) (ExprValue (ValueInt 2))) (ExprValue (ValueInt 0))) (
+            ExprIf (ExprIEQ (ExprIMod (ExprVar 1) (ExprValue (ValueInt 2))) (ExprValue (ValueInt 0))) (
                 ExprUpdateVar 1 (ExprIDiv (ExprVar 1) (ExprValue (ValueInt 2))) $ -- update hailstone count
                 ExprValue (ValueInt 42) -- this is discarded
             ) (
@@ -69,6 +80,7 @@ hailstone_iter = MkModule [
     )
 ]
 
+export
 hailstone_rec : Module 2
 hailstone_rec = MkModule [
     MkFuncDef TypeInt [] (
@@ -78,7 +90,7 @@ hailstone_rec = MkModule [
     MkFuncDef TypeInt [TypeInt] (
         ExprDeclareVar TypeInt (ExprValue (ValueInt 0)) $ -- hailstone count
         ExprDeclareVar TypeInt (ExprValue (ValueInt 1)) $ -- loop variable
-        ExprWhileNonZ (ExprILTE (ExprVar 0) (ExprVar 2)) ( -- while loop var <= argument
+        ExprWhile (ExprILTE (ExprVar 0) (ExprVar 2)) ( -- while loop var <= argument
             ExprUpdateVar 1 (ExprIAdd (ExprCall 2 [ExprVar 0]) (ExprVar 1)) $ -- update hailstone count
             ExprUpdateVar 0 (ExprIAdd (ExprVar 0) (ExprValue (ValueInt 1))) $ -- update loop variable
             ExprValue (ValueInt 42) -- this is discarded
@@ -86,10 +98,10 @@ hailstone_rec = MkModule [
         ExprVar 1
     ),
     MkFuncDef TypeInt [TypeInt] (
-        ExprIfNonZ (ExprIEQ (ExprVar 0) (ExprValue (ValueInt 1))) (
+        ExprIf (ExprIEQ (ExprVar 0) (ExprValue (ValueInt 1))) (
             ExprValue (ValueInt 0)
         ) (
-            ExprIfNonZ (ExprIEQ (ExprIMod (ExprVar 0) (ExprValue (ValueInt 2))) (ExprValue (ValueInt 0))) (
+            ExprIf (ExprIEQ (ExprIMod (ExprVar 0) (ExprValue (ValueInt 2))) (ExprValue (ValueInt 0))) (
                 ExprIAdd (ExprValue (ValueInt 1)) (ExprCall 2 [ExprIDiv (ExprVar 0) (ExprValue (ValueInt 2))])
             ) (
                 ExprIAdd (ExprValue (ValueInt 1)) (ExprCall 2 [ExprIAdd (ExprIMul (ExprValue (ValueInt 3)) (ExprVar 0)) (ExprValue (ValueInt 1))])

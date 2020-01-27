@@ -6,10 +6,10 @@ import Data.Vect
 %default covering
 
 public export
-data Value = ValueInt Int | ValueFloat Double
+data Value = ValueInt Int | ValueFloat Double | ValueBool Bool
 
 public export
-data Type' = TypeInt | TypeDouble
+data Type' = TypeInt | TypeDouble | TypeBool
 
 public export
 data Expr : (cd : Nat) -> (fns : Nat) -> Type where
@@ -18,8 +18,8 @@ data Expr : (cd : Nat) -> (fns : Nat) -> Type where
     ExprDeclareVar : Type' -> (initExpr : Expr cd fns) -> (after : Expr (S cd) fns) -> Expr cd fns
     ExprUpdateVar : (var : Fin cd) -> (newExpr : Expr cd fns) -> (after : Expr cd fns) -> Expr cd fns
     ExprCall : (f : Fin fns) -> (args : List (Expr cd fns)) -> Expr cd fns
-    ExprIfNonZ : (cond : Expr cd fns) -> (true : Expr cd fns) -> (false : Expr cd fns) -> Expr cd fns
-    ExprWhileNonZ : (cond : Expr cd fns) -> (body : Expr cd fns) -> (after : Expr cd fns) -> Expr cd fns
+    ExprIf : (cond : Expr cd fns) -> (true : Expr cd fns) -> (false : Expr cd fns) -> Expr cd fns
+    ExprWhile : (cond : Expr cd fns) -> (body : Expr cd fns) -> (after : Expr cd fns) -> Expr cd fns
     ExprIAdd : Expr cd fns -> Expr cd fns -> Expr cd fns
     ExprFAdd : Expr cd fns -> Expr cd fns -> Expr cd fns
     ExprISub : Expr cd fns -> Expr cd fns -> Expr cd fns
@@ -43,7 +43,7 @@ data Expr : (cd : Nat) -> (fns : Nat) -> Type where
     ExprOr : Expr cd fns -> Expr cd fns -> Expr cd fns
     ExprNot : Expr cd fns -> Expr cd fns
 
-export
+public export
 record FuncDef (fns : Nat) where
     constructor MkFuncDef
     returnType : Type'
@@ -60,32 +60,37 @@ record Module (numNonMainFunctions : Nat) where
 export
 typeOfValue : Value -> Type'
 typeOfValue (ValueInt x) = TypeInt
+typeOfValue (ValueBool x) = TypeBool
 typeOfValue (ValueFloat x) = TypeDouble
 
 public export
 idrisTypeOfType : Type' -> Type
 idrisTypeOfType TypeInt = Int
 idrisTypeOfType TypeDouble = Double
+idrisTypeOfType TypeBool = Bool
 
 export
 implementation Eq Type' where
-    TypeDouble == TypeInt = False
     TypeDouble == TypeDouble = True
     TypeInt == TypeInt = True
-    TypeInt == TypeDouble = False
+    TypeBool == TypeBool = True
+    _ == _ = False
 
 export
 implementation Eq Value where
     (ValueInt x) == (ValueInt y) = x == y
     (ValueFloat x) == (ValueFloat y) = x == y
+    (ValueBool x) == (ValueBool y) = x == y
     _ == _ = False
 
 export
 implementation Show Type' where
     show TypeInt = "int"
     show TypeDouble = "float"
+    show TypeBool = "bool"
 
 export
 implementation Show Value where
     show (ValueInt x) = show x
     show (ValueFloat x) = show x
+    show (ValueBool x) = show x

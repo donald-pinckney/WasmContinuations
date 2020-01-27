@@ -14,30 +14,15 @@ public export
 State : Nat -> Type
 State cd = Vect cd Value
 
-public export
-bool_to_int : Bool -> Int
-bool_to_int False = 0
-bool_to_int True = 1
 
 public export
-int_to_bool : Int -> Bool
-int_to_bool x = not (x == 0)
+bool_and : Bool -> Bool -> Bool
+bool_and x y = x && y
 
 public export
-int_and : Int -> Int -> Int
-int_and x y = bool_to_int (int_to_bool x && int_to_bool y)
+bool_or : Bool -> Bool -> Bool
+bool_or x y = x || y
 
-public export
-int_or : Int -> Int -> Int
-int_or x y = bool_to_int (int_to_bool x || int_to_bool y)
-
-public export
-int_not : Int -> Int
-int_not x = bool_to_int (not (int_to_bool x))
-
-public export
-comp2 : (c -> d) -> (a -> b -> c) -> (a -> b -> d)
-comp2 f g x y = f (g x y)
 
 public export
 lookup_state : State cd -> Fin cd -> Value
@@ -55,13 +40,14 @@ public export
 assert_type : (t : Type') -> Value -> Result (idrisTypeOfType t)
 assert_type TypeInt (ValueInt x) = Right x
 assert_type TypeDouble (ValueFloat x) = Right x
-assert_type t@TypeInt x@(ValueFloat x') = Left $ "Expected " ++ show t ++ " got " ++ show (typeOfValue x) ++ " (" ++ show x ++ ")"
-assert_type t@TypeDouble x@(ValueInt x') = Left $ "Expected " ++ show t ++ " got " ++ show (typeOfValue x) ++ " (" ++ show x ++ ")"
+assert_type TypeBool (ValueBool x) = Right x
+assert_type t x = Left $ "Expected " ++ show t ++ " got " ++ show (typeOfValue x) ++ " (" ++ show x ++ ")"
 
 public export
 idris_val_to_value : idrisTypeOfType t -> Value
 idris_val_to_value {t = TypeInt} x = ValueInt x
 idris_val_to_value {t = TypeDouble} x = ValueFloat x
+idris_val_to_value {t = TypeBool} x = ValueBool x
 
 mutual
     public export
@@ -128,20 +114,20 @@ mutual
         let f_def = lookup_function mod f
         v <- interp_call mod f_def arg_vals
         pure (v, state')
-    interp_expr mod state (ExprIfNonZ cond true false) = do
+    interp_expr mod state (ExprIf cond true false) = do
         (cond_v, state') <- interp_expr mod state cond
-        x <- assert_type TypeInt cond_v
-        if x == 0
-            then interp_expr mod state' false
-            else interp_expr mod state' true
-    interp_expr mod state (ExprWhileNonZ cond body after) = do
+        x <- assert_type TypeBool cond_v
+        if x
+            then interp_expr mod state' true
+            else interp_expr mod state' false
+    interp_expr mod state (ExprWhile cond body after) = do
         (cond_v, state') <- interp_expr mod state cond
-        x <- assert_type TypeInt cond_v
-        if x == 0
-            then interp_expr mod state' after
-            else do
+        x <- assert_type TypeBool cond_v
+        if x
+            then do
                 (body_v, state'') <- interp_expr mod state' body
-                interp_expr mod state'' (ExprWhileNonZ cond body after)
+                interp_expr mod state'' (ExprWhile cond body after)
+            else interp_expr mod state' after
     interp_expr mod state (ExprIAdd x y) = interp_binop TypeInt TypeInt (+) mod state x y
     interp_expr mod state (ExprFAdd x y) = interp_binop TypeDouble TypeDouble (+) mod state x y
     interp_expr mod state (ExprISub x y) = interp_binop TypeInt TypeInt (-) mod state x y
@@ -151,19 +137,19 @@ mutual
     interp_expr mod state (ExprIDiv x y) = interp_binop TypeInt TypeInt div mod state x y
     interp_expr mod state (ExprFDiv x y) = interp_binop TypeDouble TypeDouble (/) mod state x y
     interp_expr modulue state (ExprIMod x y) = interp_binop TypeInt TypeInt mod modulue state x y
-    interp_expr mod state (ExprIGT x y) = interp_binop TypeInt TypeInt (bool_to_int `comp2` (>)) mod state x y
-    interp_expr mod state (ExprFGT x y) = interp_binop TypeDouble TypeInt (bool_to_int `comp2` (>)) mod state x y
-    interp_expr mod state (ExprIGTE x y) = interp_binop TypeInt TypeInt (bool_to_int `comp2` (>=)) mod state x y
-    interp_expr mod state (ExprFGTE x y) = interp_binop TypeDouble TypeInt (bool_to_int `comp2` (>=)) mod state x y
-    interp_expr mod state (ExprIEQ x y) = interp_binop TypeInt TypeInt (bool_to_int `comp2` (==)) mod state x y
-    interp_expr mod state (ExprFEQ x y) = interp_binop TypeDouble TypeInt (bool_to_int `comp2` (==)) mod state x y
-    interp_expr mod state (ExprILTE x y) = interp_binop TypeInt TypeInt (bool_to_int `comp2` (<=)) mod state x y
-    interp_expr mod state (ExprFLTE x y) = interp_binop TypeDouble TypeInt (bool_to_int `comp2` (<=)) mod state x y
-    interp_expr mod state (ExprILT x y) = interp_binop TypeInt TypeInt (bool_to_int `comp2` (<)) mod state x y
-    interp_expr mod state (ExprFLT x y) = interp_binop TypeDouble TypeInt (bool_to_int `comp2` (<)) mod state x y
-    interp_expr mod state (ExprAnd x y) = interp_binop TypeInt TypeInt int_and mod state x y
-    interp_expr mod state (ExprOr x y) = interp_binop TypeInt TypeInt int_or mod state x y
-    interp_expr mod state (ExprNot x) = interp_unop TypeInt TypeInt int_not mod state x
+    interp_expr mod state (ExprIGT x y) = interp_binop TypeInt TypeBool (>) mod state x y
+    interp_expr mod state (ExprFGT x y) = interp_binop TypeDouble TypeBool (>) mod state x y
+    interp_expr mod state (ExprIGTE x y) = interp_binop TypeInt TypeBool (>=) mod state x y
+    interp_expr mod state (ExprFGTE x y) = interp_binop TypeDouble TypeBool (>=) mod state x y
+    interp_expr mod state (ExprIEQ x y) = interp_binop TypeInt TypeBool (==) mod state x y
+    interp_expr mod state (ExprFEQ x y) = interp_binop TypeDouble TypeBool (==) mod state x y
+    interp_expr mod state (ExprILTE x y) = interp_binop TypeInt TypeBool (<=) mod state x y
+    interp_expr mod state (ExprFLTE x y) = interp_binop TypeDouble TypeBool (<=) mod state x y
+    interp_expr mod state (ExprILT x y) = interp_binop TypeInt TypeBool (<) mod state x y
+    interp_expr mod state (ExprFLT x y) = interp_binop TypeDouble TypeBool (<) mod state x y
+    interp_expr mod state (ExprAnd x y) = interp_binop TypeBool TypeBool bool_and mod state x y
+    interp_expr mod state (ExprOr x y) = interp_binop TypeBool TypeBool bool_or mod state x y
+    interp_expr mod state (ExprNot x) = interp_unop TypeBool TypeBool not mod state x
 
 
 public export
