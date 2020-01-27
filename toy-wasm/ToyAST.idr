@@ -18,7 +18,7 @@ data Expr : (cd : Nat) -> (fns : Nat) -> Type where
     ExprDeclareVar : Type' -> (initExpr : Expr cd fns) -> (after : Expr (S cd) fns) -> Expr cd fns
     ExprUpdateVar : (var : Fin cd) -> (newExpr : Expr cd fns) -> (after : Expr cd fns) -> Expr cd fns
     ExprCall : (f : Fin fns) -> (args : List (Expr cd fns)) -> Expr cd fns
-    ExprIf : (cond : Expr cd fns) -> (true : Expr cd fns) -> (false : Expr cd fns) -> Expr cd fns
+    ExprIf : (cond : Expr cd fns) -> Type' -> (true : Expr cd fns) -> (false : Expr cd fns) -> Expr cd fns
     ExprWhile : (cond : Expr cd fns) -> (body : Expr cd fns) -> (after : Expr cd fns) -> Expr cd fns
     ExprIAdd : Expr cd fns -> Expr cd fns -> Expr cd fns
     ExprFAdd : Expr cd fns -> Expr cd fns -> Expr cd fns

@@ -114,7 +114,7 @@ mutual
         let f_def = lookup_function mod f
         v <- interp_call mod f_def arg_vals
         pure (v, state')
-    interp_expr mod state (ExprIf cond true false) = do
+    interp_expr mod state (ExprIf cond t true false) = do
         (cond_v, state') <- interp_expr mod state cond
         x <- assert_type TypeBool cond_v
         if x

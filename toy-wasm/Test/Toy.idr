@@ -68,7 +68,7 @@ hailstone_iter = MkModule [
         ExprDeclareVar TypeInt (ExprValue (ValueInt 0)) $ -- hailstone count
         ExprWhile (ExprNot (ExprIEQ (ExprVar 1) (ExprValue (ValueInt 1)))) ( -- while loop var != 1
             ExprUpdateVar 0 (ExprIAdd (ExprVar 0) (ExprValue (ValueInt 1))) $ -- update hailstone count
-            ExprIf (ExprIEQ (ExprIMod (ExprVar 1) (ExprValue (ValueInt 2))) (ExprValue (ValueInt 0))) (
+            ExprIf (ExprIEQ (ExprIMod (ExprVar 1) (ExprValue (ValueInt 2))) (ExprValue (ValueInt 0))) TypeInt (
                 ExprUpdateVar 1 (ExprIDiv (ExprVar 1) (ExprValue (ValueInt 2))) $ -- update hailstone count
                 ExprValue (ValueInt 42) -- this is discarded
             ) (
@@ -98,10 +98,10 @@ hailstone_rec = MkModule [
         ExprVar 1
     ),
     MkFuncDef TypeInt [TypeInt] (
-        ExprIf (ExprIEQ (ExprVar 0) (ExprValue (ValueInt 1))) (
+        ExprIf (ExprIEQ (ExprVar 0) (ExprValue (ValueInt 1))) TypeInt (
             ExprValue (ValueInt 0)
         ) (
-            ExprIf (ExprIEQ (ExprIMod (ExprVar 0) (ExprValue (ValueInt 2))) (ExprValue (ValueInt 0))) (
+            ExprIf (ExprIEQ (ExprIMod (ExprVar 0) (ExprValue (ValueInt 2))) (ExprValue (ValueInt 0))) TypeInt (
                 ExprIAdd (ExprValue (ValueInt 1)) (ExprCall 2 [ExprIDiv (ExprVar 0) (ExprValue (ValueInt 2))])
             ) (
                 ExprIAdd (ExprValue (ValueInt 1)) (ExprCall 2 [ExprIAdd (ExprIMul (ExprValue (ValueInt 3)) (ExprVar 0)) (ExprValue (ValueInt 1))])

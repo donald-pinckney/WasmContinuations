@@ -31,7 +31,7 @@ lift_local_decls (ExprVar var) = []
 lift_local_decls (ExprDeclareVar t initExpr after) = t :: (lift_local_decls initExpr ++ lift_local_decls after)
 lift_local_decls (ExprUpdateVar var newExpr after) = lift_local_decls newExpr ++ lift_local_decls after
 lift_local_decls (ExprCall f args) = foldl (\decls,arg => lift_local_decls arg ++ decls) [] args
-lift_local_decls (ExprIf cond true false) = lift_local_decls cond ++ lift_local_decls true ++ lift_local_decls false
+lift_local_decls (ExprIf cond t true false) = lift_local_decls cond ++ lift_local_decls true ++ lift_local_decls false
 lift_local_decls (ExprWhile cond body after) = lift_local_decls cond ++ lift_local_decls body ++ lift_local_decls after
 lift_local_decls (ExprIAdd x y) = lift_local_decls x ++ lift_local_decls y
 lift_local_decls (ExprFAdd x y) = lift_local_decls x ++ lift_local_decls y
@@ -71,8 +71,21 @@ compile_expr numBound (ExprCall f args) = foldl (\(instrs,b),arg =>
                                                         let (ins, b') = compile_expr b arg in
                                                         (ins ++ instrs, b')
                                                 ) ([], numBound) args
-compile_expr numBound (ExprIf cond true false) = ?compile_expr_rhs_6
-compile_expr numBound (ExprWhile cond body after) = ?compile_expr_rhs_7
+compile_expr numBound (ExprIf cond t true false) =
+    let (cond_ins, numBound') = compile_expr numBound cond in
+    let (true_ins, numBound'') = compile_expr numBound' cond in
+    let (false_ins, numBound''') = compile_expr numBound'' cond in
+    (cond_ins ++ [WasmInstrIf (Just $ compile_type t) true_ins false_ins], numBound''')
+compile_expr numBound (ExprWhile cond body after) =
+    let (cond_ins, numBound') = compile_expr numBound cond in
+    let (body_ins, numBound'') = compile_expr numBound' body in
+    let (after_ins, numBound''') = compile_expr numBound'' after in
+    (WasmInstrBlock Nothing (
+        cond_ins ++ [WasmInstrI32Eqz, WasmInstrBrIf 0] ++
+        [WasmInstrLoop Nothing (
+            body_ins ++ cond_ins ++ [WasmInstrBrIf 0, WasmInstrBr 1]
+        )]
+    ) :: after_ins, numBound''')
 compile_expr numBound (ExprIAdd x y) =
     let (xins, numBound') = compile_expr numBound x in
     let (yins, numBound'') = compile_expr numBound' y in
@@ -167,7 +180,6 @@ compile_function id (MkFuncDef returnType argumentTypes body) =
         (map compile_type argumentTypes)
         (compile_type returnType)
         (map compile_type (lift_local_decls body))
-        -- ?pouiwerwe
         (fst (compile_expr (toIntNat (length argumentTypes)) body))
         id
 

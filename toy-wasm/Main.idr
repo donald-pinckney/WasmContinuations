@@ -9,7 +9,7 @@ import System
 
 main : IO ()
 main =
-    let wasm_mod = compile_module varsProg in
+    let wasm_mod = compile_module hailstone_iter in
     let wasm_txt = dump_module wasm_mod in
     do
         Right () <- writeFile "toy.wat" wasm_txt
