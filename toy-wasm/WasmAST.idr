@@ -21,16 +21,16 @@ idrisTypeOfWasmType WasmTypeI32 = Int
 idrisTypeOfWasmType WasmTypeF64 = Double
 
 public export
-data WasmInstr =  WasmInstrConst WasmValue
+data WasmInstr' v local func label t =  WasmInstrConst v
                 | WasmInstrDrop
-                | WasmInstrLocalGet Int
-                | WasmInstrLocalSet Int
-                | WasmInstrBlock (Maybe WasmType) (List WasmInstr)
-                | WasmInstrIf (Maybe WasmType) (List WasmInstr) (List WasmInstr)
-                | WasmInstrLoop (Maybe WasmType) (List WasmInstr)
-                | WasmInstrBr Int
-                | WasmInstrBrIf Int
-                | WasmInstrCall Int
+                | WasmInstrLocalGet local
+                | WasmInstrLocalSet local
+                | WasmInstrBlock (Maybe t) (List (WasmInstr' v local func label t))
+                | WasmInstrIf (Maybe t) (List (WasmInstr' v local func label t)) (List (WasmInstr' v local func label t))
+                | WasmInstrLoop (Maybe t) (List (WasmInstr' v local func label t))
+                | WasmInstrBr label
+                | WasmInstrBrIf label
+                | WasmInstrCall func
                 | WasmInstrI64Add
                 | WasmInstrI64Sub
                 | WasmInstrI64Mul
@@ -60,6 +60,9 @@ data WasmInstr =  WasmInstrConst WasmValue
                 | WasmInstrI64Neq
                 | WasmInstrI64Eqz
 
+public export
+WasmInstr : Type
+WasmInstr = WasmInstr' WasmValue Int Int Int WasmType
 
 public export
 record WasmFunction where

@@ -86,7 +86,7 @@ compile_expr numBound (ExprWhile cond body after) =
     (WasmInstrBlock Nothing (
         cond_ins ++ [WasmInstrI32Eqz, WasmInstrBrIf 0] ++
         [WasmInstrLoop Nothing (
-            body_ins ++ cond_ins ++ [WasmInstrBrIf 0, WasmInstrBr 1]
+            body_ins ++ [WasmInstrDrop] ++ cond_ins ++ [WasmInstrBrIf 0]
         )]
     ) :: after_ins, numBound''')
 compile_expr numBound (ExprIAdd x y) =
