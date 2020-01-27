@@ -57,6 +57,8 @@ data WasmInstr =  WasmInstrConst WasmValue
                 | WasmInstrWrapI64ToI32
                 | WasmInstrI64Shr_u
                 | WasmInstrI64And
+                | WasmInstrI64Neq
+                | WasmInstrI64Eqz
 
 
 public export
@@ -107,7 +109,46 @@ export
 implementation Show WasmFunction where
     show s = "[func]"
 
+
+
 export
 implementation Eq WasmInstr where
     (WasmInstrConst x) == (WasmInstrConst y) = x == y
+    (WasmInstrDrop) == (WasmInstrDrop) = True
+    (WasmInstrLocalGet x) == (WasmInstrLocalGet y) = x == y
+    (WasmInstrLocalSet x) == (WasmInstrLocalSet y) = x == y
+    (WasmInstrBlock t1 x) == (WasmInstrBlock t2 y) = t1 == t2 && assert_total (x == y)
+    (WasmInstrIf t1 x z) == (WasmInstrIf t2 y w) = t1 == t2 && assert_total (x == y) && assert_total (z == w)
+    (WasmInstrLoop t1 x) == (WasmInstrLoop t2 y) = t1 == t2 && assert_total (x == y)
+    (WasmInstrBr x) == (WasmInstrBr y) = x == y
+    (WasmInstrBrIf x) == (WasmInstrBrIf y) = x == y
+    (WasmInstrCall x) == (WasmInstrCall y) = x == y
+    WasmInstrI64Add == WasmInstrI64Add = True
+    WasmInstrI64Sub == WasmInstrI64Sub = True
+    WasmInstrI64Mul == WasmInstrI64Mul = True
+    WasmInstrI64Div_s == WasmInstrI64Div_s = True
+    WasmInstrI64Rem_s == WasmInstrI64Rem_s = True
+    WasmInstrI32And == WasmInstrI32And = True
+    WasmInstrI32Or == WasmInstrI32Or = True
+    WasmInstrI32Eqz == WasmInstrI32Eqz = True
+    WasmInstrI32Eq == WasmInstrI32Eq = True
+    WasmInstrF64Add == WasmInstrF64Add = True
+    WasmInstrF64Sub == WasmInstrF64Sub = True
+    WasmInstrF64Mul == WasmInstrF64Mul = True
+    WasmInstrF64Div == WasmInstrF64Div = True
+    WasmInstrI64Eq == WasmInstrI64Eq = True
+    WasmInstrI64Lt_s == WasmInstrI64Lt_s = True
+    WasmInstrI64Gt_s == WasmInstrI64Gt_s = True
+    WasmInstrI64Le_s == WasmInstrI64Le_s = True
+    WasmInstrI64Ge_s == WasmInstrI64Ge_s = True
+    WasmInstrF64Eq == WasmInstrF64Eq = True
+    WasmInstrF64Lt == WasmInstrF64Lt = True
+    WasmInstrF64Gt == WasmInstrF64Gt = True
+    WasmInstrF64Le == WasmInstrF64Le = True
+    WasmInstrF64Ge == WasmInstrF64Ge = True
+    WasmInstrWrapI64ToI32 == WasmInstrWrapI64ToI32 = True
+    WasmInstrI64Shr_u == WasmInstrI64Shr_u = True
+    WasmInstrI64And == WasmInstrI64And = True
+    WasmInstrI64Neq == WasmInstrI64Neq = True
+    WasmInstrI64Eqz == WasmInstrI64Eqz = True
     _ == _ = False

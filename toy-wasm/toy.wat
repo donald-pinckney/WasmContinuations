@@ -43,8 +43,6 @@
 			get_local 0
 			i64.const 1
 			i64.eq
-			i32.eqz
-			i32.eqz
 			br_if 0
 			(loop
 				get_local 1
@@ -54,8 +52,7 @@
 				get_local 0
 				i64.const 1
 				i64.and
-				i64.const 0
-				i64.eq
+				i64.eqz
 				(if (result i64)
 					(then
 						get_local 0
@@ -76,8 +73,7 @@
 				)
 				get_local 0
 				i64.const 1
-				i64.eq
-				i32.eqz
+				i64.ne
 				br_if 0
 				br 1
 			)

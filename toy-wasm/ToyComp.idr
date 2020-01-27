@@ -6,6 +6,7 @@ import ToyInterp
 import WasmInterp
 import Data.Vect
 import Data.Fin
+import Optimizer
 
 %default covering
 
@@ -115,9 +116,10 @@ compile_expr numBound (ExprFMul x y) =
 compile_expr numBound (ExprIDiv x y) =
     let (xins, numBound') = compile_expr numBound x in
     let (yins, numBound'') = compile_expr numBound' y in
-    if yins == [WasmInstrConst (WasmValueI64 2)]
-        then (xins ++ [WasmInstrConst (WasmValueI64 1), WasmInstrI64Shr_u], numBound'')
-        else (xins ++ yins ++ [WasmInstrI64Div_s], numBound'')
+    (xins ++ yins ++ [WasmInstrI64Div_s], numBound'')
+    -- if yins == [WasmInstrConst (WasmValueI64 2)]
+    --     then (xins ++ [WasmInstrConst (WasmValueI64 1), WasmInstrI64Shr_u], numBound'')
+    --     else (xins ++ yins ++ [WasmInstrI64Div_s], numBound'')
 compile_expr numBound (ExprFDiv x y) =
     let (xins, numBound') = compile_expr numBound x in
     let (yins, numBound'') = compile_expr numBound' y in
@@ -125,9 +127,10 @@ compile_expr numBound (ExprFDiv x y) =
 compile_expr numBound (ExprIMod x y) =
     let (xins, numBound') = compile_expr numBound x in
     let (yins, numBound'') = compile_expr numBound' y in
-    if yins == [WasmInstrConst (WasmValueI64 2)]
-        then (xins ++ [WasmInstrConst (WasmValueI64 1), WasmInstrI64And], numBound'')
-        else (xins ++ yins ++ [WasmInstrI64Rem_s], numBound'')
+    (xins ++ yins ++ [WasmInstrI64Rem_s], numBound'')
+    -- if yins == [WasmInstrConst (WasmValueI64 2)]
+    --     then (xins ++ [WasmInstrConst (WasmValueI64 1), WasmInstrI64And], numBound'')
+    --     else (xins ++ yins ++ [WasmInstrI64Rem_s], numBound'')
 compile_expr numBound (ExprIGT x y) =
     let (xins, numBound') = compile_expr numBound x in
     let (yins, numBound'') = compile_expr numBound' y in
@@ -189,9 +192,13 @@ compile_function id (MkFuncDef returnType argumentTypes body) =
         (fst (compile_expr (toIntNat (length argumentTypes)) body))
         id
 
-export
-compile_module : Module nmfns -> WasmModule
-compile_module (MkModule functions) =
+compile_module' : Module nmfns -> WasmModule
+compile_module' (MkModule functions) =
     let main_f = head functions in
     let wasmFunctions = map_enum 0 compile_function (toList functions) in
     MkWasmModule wasmFunctions 0 (compile_type $ returnType main_f)
+
+
+export
+compile_module : Bool -> Module nmfns -> WasmModule
+compile_module optim m = optimize_module optim (compile_module' m)
