@@ -13,7 +13,7 @@ main = do
     (prog :: args) <- getArgs
         | [] => putStrLn "can't happen!"
     let optim = elem "-O" args
-    let wasm_mod = compile_module optim (hailstone_iter 10000000) -- 100000000
+    let wasm_mod = compile_module optim (hailstone_rec 10000000) -- 100000000
 
     -- case interp_module wasm_mod of
     --     (Left l) => putStrLn l
