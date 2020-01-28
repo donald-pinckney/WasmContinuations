@@ -25,6 +25,7 @@ data WasmInstr' v local func label t =  WasmInstrConst v
                 | WasmInstrDrop
                 | WasmInstrLocalGet local
                 | WasmInstrLocalSet local
+                | WasmInstrLocalTee local
                 | WasmInstrBlock (Maybe t) (List (WasmInstr' v local func label t))
                 | WasmInstrIf (Maybe t) (List (WasmInstr' v local func label t)) (List (WasmInstr' v local func label t))
                 | WasmInstrLoop (Maybe t) (List (WasmInstr' v local func label t))
@@ -120,6 +121,7 @@ implementation Eq WasmInstr where
     (WasmInstrDrop) == (WasmInstrDrop) = True
     (WasmInstrLocalGet x) == (WasmInstrLocalGet y) = x == y
     (WasmInstrLocalSet x) == (WasmInstrLocalSet y) = x == y
+    (WasmInstrLocalTee x) == (WasmInstrLocalTee y) = x == y
     (WasmInstrBlock t1 x) == (WasmInstrBlock t2 y) = t1 == t2 && assert_total (x == y)
     (WasmInstrIf t1 x z) == (WasmInstrIf t2 y w) = t1 == t2 && assert_total (x == y) && assert_total (z == w)
     (WasmInstrLoop t1 x) == (WasmInstrLoop t2 y) = t1 == t2 && assert_total (x == y)

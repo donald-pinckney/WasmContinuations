@@ -150,6 +150,10 @@ mutual
         (v, stack') <- pop stack
         frame' <- update_list x v frame
         Right (frame', stack')
+    interp_instr mod frame stack labels after (WasmInstrLocalTee x) = do
+        (v, stack') <- pop stack
+        frame' <- update_list x v frame
+        Right (frame', v :: stack')
     interp_instr mod frame stack labels after (WasmInstrBlock t instrs) = do
         let labels' = (MkLabel (length t) (length_list stack) after) :: labels
         interp_instrs mod frame stack labels' instrs

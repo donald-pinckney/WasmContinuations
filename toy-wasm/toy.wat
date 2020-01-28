@@ -24,8 +24,7 @@
 				get_local 2
 				i64.const 1
 				i64.add
-				set_local 2
-				get_local 2
+				tee_local 2
 				get_local 0
 				i64.le_s
 				br_if 0
