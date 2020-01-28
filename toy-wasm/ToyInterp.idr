@@ -3,12 +3,9 @@ module ToyInterp
 import ToyAST
 import Data.Vect
 import Data.Fin
+import Result
 
 %default covering
-
-public export
-Result : Type -> Type
-Result t = Either String t
 
 public export
 State : Nat -> Type

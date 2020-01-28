@@ -2,6 +2,7 @@ module WasmInterp
 
 import WasmAST
 import Data.Bits
+import Result
 
 %default covering
 
@@ -17,37 +18,37 @@ alloc_types (WasmTypeI32 :: xs) = WasmValueI32 0 :: (alloc_types xs)
 alloc_types (WasmTypeF64 :: xs) = WasmValueF64 0.0 :: (alloc_types xs)
 
 public export
-assert_type : (t : WasmType) -> WasmValue -> Either String (idrisTypeOfWasmType t)
+assert_type : (t : WasmType) -> WasmValue -> Result (idrisTypeOfWasmType t)
 assert_type WasmTypeI64 (WasmValueI64 x) = Right x
 assert_type WasmTypeI32 (WasmValueI32 x) = Right x
 assert_type WasmTypeF64 (WasmValueF64 x) = Right x
 assert_type t x = Left $ "Expected " ++ show t ++ " got " ++ show (wasmTypeOfWasmValue x) ++ " (" ++ show x ++ ")"
 
 public export
-lookup_list_rec : Int -> List x -> Either String x
+lookup_list_rec : Int -> List x -> Result x
 lookup_list_rec i [] = Left "lookup_list: Index out of bounds"
 lookup_list_rec i (y :: xs) = if i == 0 then Right y else lookup_list_rec (i-1) xs
 
 public export
-lookup_list : Show x => Int -> List x -> Either String x
+lookup_list : Show x => Int -> List x -> Result x
 lookup_list x xs = case lookup_list_rec x xs of
     (Left l) => Left $ "lookup_list: Index " ++ show x ++ " out of bounds for list " ++ show xs
     (Right r) => Right r
 
 public export
-update_list : Int -> x -> List x -> Either String (List x)
+update_list : Int -> x -> List x -> Result (List x)
 update_list i y [] = Left "update_list: Index out of bounds"
 update_list i y (z :: xs) = if i == 0 then Right (y :: xs) else do
     y_xs' <- update_list (i-1) y xs
     pure (z :: y_xs')
 
 public export
-pop : List WasmValue -> Either String (WasmValue, List WasmValue)
+pop : List WasmValue -> Result (WasmValue, List WasmValue)
 pop [] = Left "expected a non-empty stack"
 pop (x :: xs) = Right (x, xs)
 
 public export
-pop_n : List a -> Int -> Either String (List a, List a) -- (the poped ones, the remaining ones)
+pop_n : List a -> Int -> Result (List a, List a) -- (the poped ones, the remaining ones)
 pop_n [] x = if x == 0 then Right ([], []) else Left "could not pop enough things"
 pop_n (y :: xs) n = if n == 0
     then Right ([], y :: xs)
@@ -86,7 +87,7 @@ idris_val_to_wasm_value {t = WasmTypeF64} x = WasmValueF64 x
 public export
 interp_binop : (at : WasmType) -> (rt : WasmType) ->
                 ((idrisTypeOfWasmType at) -> (idrisTypeOfWasmType at) -> (idrisTypeOfWasmType rt)) ->
-                List WasmValue -> Either String (List WasmValue)
+                List WasmValue -> Result (List WasmValue)
 interp_binop at rt f stack = do
     (y_v, stack') <- pop stack
     y_n <- assert_type at y_v
@@ -98,7 +99,7 @@ interp_binop at rt f stack = do
 public export
 interp_unop : (at : WasmType) -> (rt : WasmType) ->
                 ((idrisTypeOfWasmType at) -> (idrisTypeOfWasmType rt)) ->
-                List WasmValue -> Either String (List WasmValue)
+                List WasmValue -> Result (List WasmValue)
 interp_unop at rt f stack = do
     (x_v, stack') <- pop stack
     x_n <- assert_type at x_v
@@ -139,7 +140,7 @@ comp2 f g x y = f (g x y)
 
 mutual
     public export
-    interp_instr : (mod : WasmModule) -> (frame : State) -> (stack : List WasmValue) -> (labels : List Label) -> (after : List WasmInstr) -> (instr : WasmInstr) -> Either String (State, List WasmValue)
+    interp_instr : (mod : WasmModule) -> (frame : State) -> (stack : List WasmValue) -> (labels : List Label) -> (after : List WasmInstr) -> (instr : WasmInstr) -> Result (State, List WasmValue)
     interp_instr mod frame stack labels after (WasmInstrConst x) = Right (frame, x :: stack)
     interp_instr mod frame stack labels after WasmInstrDrop = do
         (v, stack') <- pop stack
@@ -217,7 +218,7 @@ mutual
     interp_instr mod frame stack labels after WasmInstrI64Eqz = Right (frame, !(interp_unop WasmTypeI64 WasmTypeI32 int_not stack))
 
     public export
-    interp_instrs : (mod : WasmModule) -> (frame : State) -> (stack : List WasmValue) -> (labels : List Label) -> (instrs : List WasmInstr) -> Either String (State, List WasmValue)
+    interp_instrs : (mod : WasmModule) -> (frame : State) -> (stack : List WasmValue) -> (labels : List Label) -> (instrs : List WasmInstr) -> Result (State, List WasmValue)
     interp_instrs mod frame stack [] [] = Right (frame, stack)
     interp_instrs mod frame stack (l :: ls) [] = interp_instrs mod frame stack ls (continuation l) --Right (frame, stack)
     interp_instrs mod frame stack labels (i :: is) = do
@@ -225,7 +226,7 @@ mutual
         interp_instrs mod frame' stack' labels is
 
     public export
-    interp_call : WasmModule -> WasmFunction -> List WasmValue -> Either String WasmValue
+    interp_call : WasmModule -> WasmFunction -> List WasmValue -> Result WasmValue
     interp_call mod (MkWasmFunction paramTypes resultType localTypes body id) args =
         let frame = args ++ alloc_types localTypes in do
         (frame', stack) <- interp_instrs mod frame [] [] body
@@ -237,7 +238,7 @@ mutual
 
 
 public export
-interp_module : WasmModule -> Either String WasmValue
+interp_module : WasmModule -> Result WasmValue
 interp_module mod@(MkWasmModule funcs start st) = do
     start_f <- lookup_list start funcs
     if length (paramTypes start_f) /= 0
