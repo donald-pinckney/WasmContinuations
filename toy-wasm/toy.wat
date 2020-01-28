@@ -1,7 +1,7 @@
 (module
 	(import "console" "log_i32" (func $log_i32 (param i32)))
 	(import "console" "log_f64" (func $log_f64 (param f64)))
-	(func $f0  (result i64 )
+	(func $f0  (result i64 ) 
 		i64.const 10000000
 		call $f1
 	)
@@ -25,8 +25,6 @@
 				i64.const 1
 				i64.add
 				set_local 2
-				i64.const 42
-				drop
 				get_local 2
 				get_local 0
 				i64.le_s

@@ -4,18 +4,15 @@ import WasmAST
 
 %default covering
 
-data MatchToken a = ExactValue a | Wildcard
-
--- RewriteRule : Type
--- RewriteRule = (List (WasmInstr' (MatchToken WasmValue) (MatchToken Int) (MatchToken Int) (MatchToken Int) (MatchToken WasmType)), List WasmInstr)
-
 RewriteRule : Type
 RewriteRule = List WasmInstr -> Maybe (List WasmInstr)
 
-
-
 exactRule : (List WasmInstr, List WasmInstr) -> RewriteRule
 exactRule (pat, new) = \instrs => if pat == instrs then Just new else Nothing
+
+constDropRule : RewriteRule
+constDropRule [WasmInstrConst v, WasmInstrDrop] = Just []
+constDropRule instrs = Nothing
 
 Rules : List RewriteRule
 Rules =
@@ -33,7 +30,8 @@ Rules =
     [exactRule ([WasmInstrI64Le_s, WasmInstrI32Eqz], [WasmInstrI64Gt_s])] ++
     [exactRule ([WasmInstrI64Lt_s, WasmInstrI32Eqz], [WasmInstrI64Ge_s])] ++
     [exactRule ([WasmInstrI64Ge_s, WasmInstrI32Eqz], [WasmInstrI64Lt_s])] ++
-    [exactRule ([WasmInstrI64Gt_s, WasmInstrI32Eqz], [WasmInstrI64Le_s])]
+    [exactRule ([WasmInstrI64Gt_s, WasmInstrI32Eqz], [WasmInstrI64Le_s])] ++
+    [constDropRule]
 
 find_pattern_head : (len : Nat) -> (pattern : RewriteRule) -> (xs : List WasmInstr) -> Maybe (Int, Int, List WasmInstr)
 find_pattern_head Z pattern xs = case pattern [] of
