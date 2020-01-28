@@ -78,6 +78,7 @@ mutual
     dump_instr tab WasmInstrF64Ge = (tab_str tab) ++ "f64.ge"
     dump_instr tab WasmInstrWrapI64ToI32 = (tab_str tab) ++ "i32.wrap_i64"
     dump_instr tab WasmInstrI64Shr_u = (tab_str tab) ++ "i64.shr_u"
+    dump_instr tab WasmInstrI64Shl = (tab_str tab) ++ "i64.shl"
     dump_instr tab WasmInstrI64And = (tab_str tab) ++ "i64.and"
     dump_instr tab WasmInstrI64Neq = (tab_str tab) ++ "i64.ne"
     dump_instr tab WasmInstrI64Eqz = (tab_str tab) ++ "i64.eqz"

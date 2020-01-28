@@ -57,6 +57,7 @@ data WasmInstr' v local func label t =  WasmInstrConst v
                 | WasmInstrF64Ge
                 | WasmInstrWrapI64ToI32
                 | WasmInstrI64Shr_u
+                | WasmInstrI64Shl
                 | WasmInstrI64And
                 | WasmInstrI64Neq
                 | WasmInstrI64Eqz
@@ -153,6 +154,7 @@ implementation Eq WasmInstr where
     WasmInstrF64Ge == WasmInstrF64Ge = True
     WasmInstrWrapI64ToI32 == WasmInstrWrapI64ToI32 = True
     WasmInstrI64Shr_u == WasmInstrI64Shr_u = True
+    WasmInstrI64Shl == WasmInstrI64Shl = True
     WasmInstrI64And == WasmInstrI64And = True
     WasmInstrI64Neq == WasmInstrI64Neq = True
     WasmInstrI64Eqz == WasmInstrI64Eqz = True

@@ -18,9 +18,32 @@ teeRule : RewriteRule
 teeRule [WasmInstrLocalSet l1, WasmInstrLocalGet l2] = if l1 == l2 then Just [WasmInstrLocalTee l1] else Nothing
 teeRule instr = Nothing
 
+export
+is_small_int : Int -> Bool
+is_small_int x = x <= 5
+
+-- smallMulRule : RewriteRule
+-- smallMulRule [WasmInstrConst (WasmValueI64 n), WasmInstrI64Mul] = if n == 0 || n == 1 || not (is_small_int n)
+--     then Nothing
+--     else ?eNothing
+
 Rules : List RewriteRule
-Rules = [
+Rules =
+    map (\bits => exactRule ([WasmInstrConst (WasmValueI64 (shiftL 1 bits)), WasmInstrI64Div_s],
+                   [WasmInstrConst (WasmValueI64 bits), WasmInstrI64Shr_u])
+        ) (enumFromTo 1 62) ++
+    map (\bits => exactRule ([WasmInstrConst (WasmValueI64 (shiftL 1 bits)), WasmInstrI64Mul],
+                   [WasmInstrConst (WasmValueI64 bits), WasmInstrI64Shl])
+        ) (enumFromTo 1 62) ++
+    map (\bits => exactRule ([WasmInstrConst (WasmValueI64 (shiftL 1 bits)), WasmInstrI64Rem_s],
+               [WasmInstrConst (WasmValueI64 (shiftL 1 (bits - 1))), WasmInstrI64And])
+        ) (enumFromTo 1 62) ++
+    [
         exactRule ([WasmInstrConst (WasmValueI64 1), WasmInstrI64Div_s], []),
+        exactRule ([WasmInstrConst (WasmValueI64 1), WasmInstrI64Mul], []),
+        exactRule ([WasmInstrConst (WasmValueI64 0), WasmInstrI64Mul], [WasmInstrDrop, WasmInstrConst (WasmValueI64 0)]),
+        exactRule ([WasmInstrConst (WasmValueI64 0), WasmInstrI64Add], []),
+        exactRule ([WasmInstrConst (WasmValueI64 0), WasmInstrI64Sub], []),
         exactRule ([WasmInstrConst (WasmValueI64 1), WasmInstrI64Rem_s], [WasmInstrDrop, WasmInstrConst (WasmValueI64 0)]),
         exactRule ([WasmInstrI64Eq, WasmInstrI32Eqz], [WasmInstrI64Neq]),
         exactRule ([WasmInstrI64Neq, WasmInstrI32Eqz], [WasmInstrI64Eq]),
@@ -31,13 +54,7 @@ Rules = [
         exactRule ([WasmInstrI64Gt_s, WasmInstrI32Eqz], [WasmInstrI64Le_s]),
         constDropRule,
         teeRule
-    ] ++
-    map (\bits => exactRule ([WasmInstrConst (WasmValueI64 (shiftL 1 bits)), WasmInstrI64Div_s],
-                   [WasmInstrConst (WasmValueI64 bits), WasmInstrI64Shr_u])
-        ) (enumFromTo 1 62) ++
-    map (\bits => exactRule ([WasmInstrConst (WasmValueI64 (shiftL 1 bits)), WasmInstrI64Rem_s],
-               [WasmInstrConst (WasmValueI64 (shiftL 1 (bits - 1))), WasmInstrI64And])
-    ) (enumFromTo 1 62)
+    ]
 
 find_pattern_head : (len : Nat) -> (pattern : RewriteRule) -> (xs : List WasmInstr) -> Maybe (Int, Int, List WasmInstr)
 find_pattern_head Z pattern xs = case pattern [] of

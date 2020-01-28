@@ -57,6 +57,10 @@ lift_local_decls (ExprAnd x y) = lift_local_decls x ++ lift_local_decls y
 lift_local_decls (ExprOr x y) = lift_local_decls x ++ lift_local_decls y
 lift_local_decls (ExprNot x) = lift_local_decls x
 
+is_small_int_expr : Expr d fns -> Bool
+is_small_int_expr (ExprValue (ValueInt x)) = is_small_int x
+is_small_int_expr e = False
+
 compile_expr : Int -> Expr d fns -> (List WasmInstr, Int)
 compile_expr numBound (ExprValue x) = ([WasmInstrConst (valueToWasmValue x)], numBound)
 compile_expr numBound (ExprVar var) = ([WasmInstrLocalGet (numBound - (toIntNat $ finToNat var) - 1)], numBound)
@@ -105,10 +109,18 @@ compile_expr numBound (ExprFSub x y) =
     let (xins, numBound') = compile_expr numBound x in
     let (yins, numBound'') = compile_expr numBound' y in
     (xins ++ yins ++ [WasmInstrF64Sub], numBound'')
-compile_expr numBound (ExprIMul x y) =
-    let (xins, numBound') = compile_expr numBound x in
-    let (yins, numBound'') = compile_expr numBound' y in
-    (xins ++ yins ++ [WasmInstrI64Mul], numBound'')
+compile_expr numBound (ExprIMul x_tmp y_tmp) =
+    if is_small_int_expr x_tmp
+        then let (xins, numBound') = compile_expr numBound x_tmp in
+             let (yins, numBound'') = compile_expr numBound' y_tmp in
+             (xins ++ yins ++ [WasmInstrI64Mul], numBound'')
+        else let (xins, numBound') = compile_expr numBound x_tmp in
+             let (yins, numBound'') = compile_expr numBound' y_tmp in
+             (yins ++ xins ++ [WasmInstrI64Mul], numBound'')
+
+    -- let (xins, numBound') = compile_expr numBound x in
+    -- let (yins, numBound'') = compile_expr numBound' y in
+    -- (xins ++ yins ++ [WasmInstrI64Mul], numBound'')
 compile_expr numBound (ExprFMul x y) =
     let (xins, numBound') = compile_expr numBound x in
     let (yins, numBound'') = compile_expr numBound' y in

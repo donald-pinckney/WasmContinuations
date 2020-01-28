@@ -211,6 +211,7 @@ mutual
     interp_instr mod frame stack labels after WasmInstrF64Ge = Right (frame, !(interp_binop WasmTypeF64 WasmTypeI32 (bool_to_int `comp2` (>=)) stack))
     interp_instr mod frame stack labels after WasmInstrWrapI64ToI32 = Right (frame, !(interp_unop WasmTypeI64 WasmTypeI32 id stack))
     interp_instr mod frame stack labels after WasmInstrI64Shr_u = Right (frame, !(interp_binop WasmTypeI64 WasmTypeI64 shiftR stack))
+    interp_instr mod frame stack labels after WasmInstrI64Shl = Right (frame, !(interp_binop WasmTypeI64 WasmTypeI64 shiftL stack))
     interp_instr mod frame stack labels after WasmInstrI64And = Right (frame, !(interp_binop WasmTypeI64 WasmTypeI64 int_and_bits stack))
     interp_instr mod frame stack labels after WasmInstrI64Neq = Right (frame, !(interp_binop WasmTypeI64 WasmTypeI32 (bool_to_int `comp2` (/=)) stack))
     interp_instr mod frame stack labels after WasmInstrI64Eqz = Right (frame, !(interp_unop WasmTypeI64 WasmTypeI32 int_not stack))
