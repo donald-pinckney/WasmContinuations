@@ -61,6 +61,7 @@ data WasmInstr' v local func label t =  WasmInstrConst v
                 | WasmInstrI64And
                 | WasmInstrI64Neq
                 | WasmInstrI64Eqz
+                | WasmInstrF64Neg
 
 public export
 WasmInstr : Type
@@ -158,4 +159,5 @@ implementation Eq WasmInstr where
     WasmInstrI64And == WasmInstrI64And = True
     WasmInstrI64Neq == WasmInstrI64Neq = True
     WasmInstrI64Eqz == WasmInstrI64Eqz = True
+    WasmInstrF64Neg == WasmInstrF64Neg = True
     _ == _ = False

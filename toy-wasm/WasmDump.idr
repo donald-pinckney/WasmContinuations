@@ -82,6 +82,7 @@ mutual
     dump_instr tab WasmInstrI64And = (tab_str tab) ++ "i64.and"
     dump_instr tab WasmInstrI64Neq = (tab_str tab) ++ "i64.ne"
     dump_instr tab WasmInstrI64Eqz = (tab_str tab) ++ "i64.eqz"
+    dump_instr tab WasmInstrF64Neg = (tab_str tab) ++ "f64.neg"
 
 
     dump_instrs : Nat -> List WasmInstr -> String

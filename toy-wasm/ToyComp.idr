@@ -56,6 +56,8 @@ lift_local_decls (ExprFLT x y) = lift_local_decls x ++ lift_local_decls y
 lift_local_decls (ExprAnd x y) = lift_local_decls x ++ lift_local_decls y
 lift_local_decls (ExprOr x y) = lift_local_decls x ++ lift_local_decls y
 lift_local_decls (ExprNot x) = lift_local_decls x
+lift_local_decls (ExprINeg x) = lift_local_decls x
+lift_local_decls (ExprFNeg x) = lift_local_decls x
 
 is_small_int_expr : Expr d fns -> Bool
 is_small_int_expr (ExprValue (ValueInt x)) = is_small_int x
@@ -109,6 +111,12 @@ compile_expr numBound (ExprFSub x y) =
     let (xins, numBound') = compile_expr numBound x in
     let (yins, numBound'') = compile_expr numBound' y in
     (xins ++ yins ++ [WasmInstrF64Sub], numBound'')
+compile_expr numBound (ExprINeg x) =
+    let (xins, numBound') = compile_expr numBound x in
+    ([WasmInstrConst (WasmValueI64 0)] ++ xins ++ [WasmInstrI64Sub], numBound')
+compile_expr numBound (ExprFNeg x) =
+    let (xins, numBound') = compile_expr numBound x in
+    (xins ++ [WasmInstrF64Neg], numBound')
 compile_expr numBound (ExprIMul x_tmp y_tmp) =
     if is_small_int_expr x_tmp
         then let (xins, numBound') = compile_expr numBound x_tmp in

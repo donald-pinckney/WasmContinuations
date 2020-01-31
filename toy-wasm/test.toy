@@ -1,0 +1,25 @@
+func int main() {
+    hailstones(1000)
+}
+
+func int hailstones(int numTest) {
+    let int i = 0;
+    let int k = 1;
+    while k <= numTest do
+        set i = i + hailstone(k);
+        set k = k + 1;
+        42
+    end
+    i
+}
+
+func int hailstone(int k) {
+    let int i = 0;
+    while !(k == 1) do
+        set i = i + 1;
+        if k % 2 == 0
+            then set k = k / 2; 42
+            else set k = 3*k + 1; 42
+    end
+    i
+}

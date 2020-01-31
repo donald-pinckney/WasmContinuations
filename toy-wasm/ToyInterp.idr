@@ -129,6 +129,8 @@ mutual
     interp_expr mod state (ExprFAdd x y) = interp_binop TypeDouble TypeDouble (+) mod state x y
     interp_expr mod state (ExprISub x y) = interp_binop TypeInt TypeInt (-) mod state x y
     interp_expr mod state (ExprFSub x y) = interp_binop TypeDouble TypeDouble (-) mod state x y
+    interp_expr mod state (ExprINeg x) = interp_unop TypeInt TypeInt negate mod state x
+    interp_expr mod state (ExprFNeg x) = interp_unop TypeDouble TypeDouble negate mod state x
     interp_expr mod state (ExprIMul x y) = interp_binop TypeInt TypeInt (*) mod state x y
     interp_expr mod state (ExprFMul x y) = interp_binop TypeDouble TypeDouble (*) mod state x y
     interp_expr mod state (ExprIDiv x y) = interp_binop TypeInt TypeInt div mod state x y

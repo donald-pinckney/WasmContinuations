@@ -24,6 +24,8 @@ data Expr : (cd : Nat) -> (fns : Nat) -> Type where
     ExprFAdd : Expr cd fns -> Expr cd fns -> Expr cd fns
     ExprISub : Expr cd fns -> Expr cd fns -> Expr cd fns
     ExprFSub : Expr cd fns -> Expr cd fns -> Expr cd fns
+    ExprINeg : Expr cd fns -> Expr cd fns
+    ExprFNeg : Expr cd fns -> Expr cd fns
     ExprIMul : Expr cd fns -> Expr cd fns -> Expr cd fns
     ExprFMul : Expr cd fns -> Expr cd fns -> Expr cd fns
     ExprIDiv : Expr cd fns -> Expr cd fns -> Expr cd fns
