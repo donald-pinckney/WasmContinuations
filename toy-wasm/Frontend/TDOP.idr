@@ -2,6 +2,8 @@ module TDOP
 
 import Data.String
 
+%default covering
+
 export
 record TokenAction pt tt rt where
     constructor MkTokenAction

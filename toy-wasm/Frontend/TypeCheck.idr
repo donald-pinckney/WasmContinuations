@@ -140,6 +140,10 @@ mutual
     check_type fns context (PExprOr x y) t = Left $ "|| does not return " ++ show t
     check_type fns context (PExprNot x) TypeBool = [ExprNot x' | x' <- check_type fns context x TypeBool]
     check_type fns context (PExprNot x) t = Left $ "! does not return " ++ show t
+    check_type fns context (PExprCast x t') t = do
+        assert_eq_types t t'
+        (x_t, x') <- find_type fns context x
+        pure (ExprCast x' x_t t)
 
 typeCheckFunc : (funcTypes : Vect fns (String, Type', List Type')) -> PFunc -> Either String (FuncDef fns)
 typeCheckFunc funcTypes (MkPFunc name returnType params body) =

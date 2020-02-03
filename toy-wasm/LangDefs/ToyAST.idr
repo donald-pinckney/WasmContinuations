@@ -44,6 +44,7 @@ data Expr : (cd : Nat) -> (fns : Nat) -> Type where
     ExprAnd : Expr cd fns -> Expr cd fns -> Expr cd fns
     ExprOr : Expr cd fns -> Expr cd fns -> Expr cd fns
     ExprNot : Expr cd fns -> Expr cd fns
+    ExprCast : Expr cd fns -> Type' -> Type' -> Expr cd fns
 
 public export
 record FuncDef (fns : Nat) where

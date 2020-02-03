@@ -137,6 +137,10 @@ int_not : Int -> Int
 int_not x = bool_to_int (not (int_to_bool x))
 
 public export
+float_eqz : Double -> Int
+float_eqz x = if x == 0 then 1 else 0
+
+public export
 comp2 : (c -> d) -> (a -> b -> c) -> (a -> b -> d)
 comp2 f g x y = f (g x y)
 
@@ -219,6 +223,11 @@ mutual
     interp_instr mod frame stack labels after WasmInstrI64Neq = Right (frame, !(interp_binop WasmTypeI64 WasmTypeI32 (bool_to_int `comp2` (/=)) stack))
     interp_instr mod frame stack labels after WasmInstrI64Eqz = Right (frame, !(interp_unop WasmTypeI64 WasmTypeI32 int_not stack))
     interp_instr mod frame stack labels after WasmInstrF64Neg = Right (frame, !(interp_unop WasmTypeF64 WasmTypeF64 (0-) stack))
+    interp_instr mod frame stack labels after WasmInstrI64ExtendI32_s = Right (frame, !(interp_unop WasmTypeI32 WasmTypeI64 id stack))
+    interp_instr mod frame stack labels after WasmInstrI64TruncF64_s = Right (frame, !(interp_unop WasmTypeF64 WasmTypeI64 cast stack))
+    interp_instr mod frame stack labels after WasmInstrF64ConvertI32_s = Right (frame, !(interp_unop WasmTypeI32 WasmTypeF64 cast stack))
+    interp_instr mod frame stack labels after WasmInstrF64ConvertI64_s = Right (frame, !(interp_unop WasmTypeI64 WasmTypeF64 cast stack))
+    interp_instr mod frame stack labels after WasmInstrF64Eqz = Right (frame, !(interp_unop WasmTypeF64 WasmTypeI32 float_eqz stack))
 
     public export
     interp_instrs : (mod : WasmModule) -> (frame : State) -> (stack : List WasmValue) -> (labels : List Label) -> (instrs : List WasmInstr) -> Result (State, List WasmValue)

@@ -7,6 +7,8 @@ import LangDefs.ToyAST
 
 import Utils
 
+%default covering
+
 public export
 data PExpr =
     PExprVar String | PExprValue Value
@@ -29,6 +31,7 @@ data PExpr =
     | PExprAnd PExpr PExpr
     | PExprOr PExpr PExpr
     | PExprNot PExpr
+    | PExprCast PExpr Type'
 
 export
 Show PExpr where
@@ -53,6 +56,7 @@ Show PExpr where
     show (PExprAnd x y) = "(" ++ show x ++ ") && (" ++ show y ++ ")"
     show (PExprOr x y) = "(" ++ show x ++ ") || (" ++ show y ++ ")"
     show (PExprNot x) = "!(" ++ show x ++ ")"
+    show (PExprCast x t) = "(" ++ show x ++ ") to " ++ show t
 
 public export
 record PFunc where
@@ -122,6 +126,18 @@ exprHandler TokLT = handle_infixl 8 PExprLT
 exprHandler TokAnd = handle_infixl 6 PExprAnd
 exprHandler TokOr = handle_infixl 4 PExprOr
 exprHandler TokNot = handle_prefix 7 PExprNot
+exprHandler TokTo =
+    MkTokenAction
+        Nothing
+        (Just $ \l,r_s,p =>
+            do
+                let (Just tt, rest) = headMatches isTypeTok r_s
+                    | (Nothing, rest) => Left "expected type after 'to'"
+                t <- coerceToType tt
+
+                pure (PExprCast l t, rest)
+        )
+        (Just 3)
 
 exprHandler TokLP = (handle_group_left TokRP) <+>
     MkTokenAction
@@ -212,6 +228,7 @@ exprHandler TokWhile =
 exprHandler TokDo = handle_group_right
 exprHandler TokEnd = handle_group_right
 exprHandler TokRB = handle_group_right
+
 
 export
 parseExpr : List MyToken -> Either String PExpr

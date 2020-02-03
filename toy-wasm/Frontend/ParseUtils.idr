@@ -4,6 +4,8 @@ import Data.Vect
 
 import Utils
 
+%default covering
+
 public export
 SourceString : Type
 SourceString = List (Nat, Char)

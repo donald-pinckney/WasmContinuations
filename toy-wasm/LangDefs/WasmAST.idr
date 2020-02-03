@@ -63,6 +63,13 @@ data WasmInstr' v local func label t =  WasmInstrConst v
                 | WasmInstrI64Eqz
                 | WasmInstrF64Neg
 
+                | WasmInstrI64ExtendI32_s
+                | WasmInstrI64TruncF64_s
+                | WasmInstrF64ConvertI32_s
+                | WasmInstrF64ConvertI64_s
+                | WasmInstrF64Neq
+
+
 public export
 WasmInstr : Type
 WasmInstr = WasmInstr' WasmValue Int Int Int WasmType
@@ -160,4 +167,11 @@ implementation Eq WasmInstr where
     WasmInstrI64Neq == WasmInstrI64Neq = True
     WasmInstrI64Eqz == WasmInstrI64Eqz = True
     WasmInstrF64Neg == WasmInstrF64Neg = True
+
+    WasmInstrI64ExtendI32_s == WasmInstrI64ExtendI32_s = True
+    WasmInstrI64TruncF64_s == WasmInstrI64TruncF64_s = True
+    WasmInstrF64ConvertI32_s == WasmInstrF64ConvertI32_s = True
+    WasmInstrF64ConvertI64_s == WasmInstrF64ConvertI64_s = True
+    WasmInstrF64Neq == WasmInstrF64Neq = True
+
     _ == _ = False

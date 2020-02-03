@@ -14,7 +14,7 @@ data MyToken = TokVar String
     | TokAdd | TokMul | TokSub | TokDiv | TokMod | TokLP | TokRP | TokLB | TokRB | TokComma
     | TokAnd | TokOr | TokNot | TokGT | TokGTE | TokEqEq | TokLTE | TokLT | TokSemi
     | TokIf | TokThen | TokElse | TokWhile | TokEnd | TokFunc | TokTypeInt | TokTypeFloat | TokTypeBool | TokLet | TokSet | TokEq
-    | TokDo
+    | TokDo | TokTo
 
 export
 implementation Eq MyToken where
@@ -60,6 +60,8 @@ implementation Eq MyToken where
 
     TokDo == TokDo = True
 
+    TokTo == TokTo = True
+
     _ == _ = False
 
 %default covering
@@ -102,12 +104,12 @@ Show MyToken where
     show TokSet = "set"
     show TokSemi = ";"
     show TokDo = "do"
-
+    show TokTo = "to"
 
 
 
 isVarChar : Char -> Bool
-isVarChar x = isAlpha x || isDigit x
+isVarChar x = isAlpha x || isDigit x || x == '.'
 
 isWhitespace : Char -> Bool
 isWhitespace ' ' = True
@@ -173,6 +175,7 @@ postProcessRawToken (Left "float") = TokTypeFloat
 postProcessRawToken (Left "bool") = TokTypeBool
 postProcessRawToken (Left "let") = TokLet
 postProcessRawToken (Left "set") = TokSet
+postProcessRawToken (Left "to") = TokTo
 
 postProcessRawToken (Left str) =
     case parseInteger {a=Int} str of

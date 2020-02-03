@@ -25,6 +25,18 @@ compile_type TypeDouble = WasmTypeF64
 compile_type TypeBool = WasmTypeI32
 
 
+cast_instrs : (t : Type') -> (to_t : Type') -> List WasmInstr
+cast_instrs TypeInt TypeDouble = [WasmInstrF64ConvertI64_s]
+cast_instrs TypeInt TypeBool = [WasmInstrI64Eqz, WasmInstrI32Eqz]
+cast_instrs TypeDouble TypeInt = [WasmInstrI64TruncF64_s]
+cast_instrs TypeDouble TypeBool = [WasmInstrConst (WasmValueF64 0), WasmInstrF64Neq]
+cast_instrs TypeBool TypeInt = [WasmInstrI64ExtendI32_s]
+cast_instrs TypeBool TypeDouble = [WasmInstrF64ConvertI32_s]
+cast_instrs TypeInt TypeInt = []
+cast_instrs TypeDouble TypeDouble = []
+cast_instrs TypeBool TypeBool = []
+
+
 lift_local_decls : Expr d fns -> List Type'
 lift_local_decls (ExprValue x) = []
 lift_local_decls (ExprVar var) = []
@@ -57,6 +69,7 @@ lift_local_decls (ExprOr x y) = lift_local_decls x ++ lift_local_decls y
 lift_local_decls (ExprNot x) = lift_local_decls x
 lift_local_decls (ExprINeg x) = lift_local_decls x
 lift_local_decls (ExprFNeg x) = lift_local_decls x
+lift_local_decls (ExprCast x t to_t) = lift_local_decls x
 
 is_small_int_expr : Expr d fns -> Bool
 is_small_int_expr (ExprValue (ValueInt x)) = is_small_int x
@@ -201,6 +214,9 @@ compile_expr numBound (ExprOr x y) =
 compile_expr numBound (ExprNot x) =
     let (xins, numBound') = compile_expr numBound x in
     (xins ++ [WasmInstrI32Eqz], numBound')
+compile_expr numBound (ExprCast x t to_t) =
+    let (xins, numBound') = compile_expr numBound x in
+    (xins ++ cast_instrs t to_t, numBound')
 
 compile_function : Int -> FuncDef fns -> WasmFunction
 compile_function id (MkFuncDef returnType argumentTypes body) =

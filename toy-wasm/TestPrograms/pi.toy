@@ -1,0 +1,19 @@
+func float main() {
+    pi(1000000000)
+}
+
+func float pi(int numTerms) {
+    let float f = 0.0;
+    let int k = 0;
+    while k < numTerms do
+        set f = f + term(k to float);
+        set k = k + 1;
+        42
+    end
+    f
+}
+
+func float term(float k) {
+    let int sign = 2 * -(k to int % 2) + 1;
+    (4 * sign to float) / (2.0*k + 1.0)
+}

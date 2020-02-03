@@ -2,6 +2,8 @@ module Utils
 
 import Data.Vect
 
+%default covering
+
 namespace int
     export
     replace_range : (xs : List a) -> (start : Int) -> (len : Int) -> (new : List a) -> List a

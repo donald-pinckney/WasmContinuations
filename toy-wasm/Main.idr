@@ -13,6 +13,8 @@ import Backend.WasmDump
 
 import System
 
+%default covering
+
 compilerPipeline : Bool -> String -> Either String WasmModule
 compilerPipeline optim str = do
     toks <- tokenize str

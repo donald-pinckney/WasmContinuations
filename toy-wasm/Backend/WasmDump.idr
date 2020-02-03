@@ -83,6 +83,11 @@ mutual
     dump_instr tab WasmInstrI64Neq = (tab_str tab) ++ "i64.ne"
     dump_instr tab WasmInstrI64Eqz = (tab_str tab) ++ "i64.eqz"
     dump_instr tab WasmInstrF64Neg = (tab_str tab) ++ "f64.neg"
+    dump_instr tab WasmInstrI64ExtendI32_s = (tab_str tab) ++ "i64.extend_i32_s"
+    dump_instr tab WasmInstrI64TruncF64_s = (tab_str tab) ++ "i64.trunc_f64_s"
+    dump_instr tab WasmInstrF64ConvertI32_s = (tab_str tab) ++ "f64.convert_i32_s"
+    dump_instr tab WasmInstrF64ConvertI64_s = (tab_str tab) ++ "f64.convert_i64_s"
+    dump_instr tab WasmInstrF64Neq = (tab_str tab) ++ "f64.ne"
 
 
     dump_instrs : Nat -> List WasmInstr -> String

@@ -13,6 +13,31 @@ public export
 State : Nat -> Type
 State cd = Vect cd Value
 
+public export
+int_to_double : Int -> Double
+int_to_double x = cast x
+
+public export
+int_to_bool : Int -> Bool
+int_to_bool x = x /= 0
+
+public export
+bool_to_double : Bool -> Double
+bool_to_double False = 0
+bool_to_double True = 1
+
+public export
+double_to_bool : Double -> Bool
+double_to_bool x = x /= 0
+
+public export
+double_to_int : Double -> Int
+double_to_int x = cast x
+
+public export
+bool_to_int : Bool -> Int
+bool_to_int False = 0
+bool_to_int True = 1
 
 public export
 bool_and : Bool -> Bool -> Bool
@@ -151,6 +176,16 @@ mutual
     interp_expr mod state (ExprAnd x y) = interp_binop TypeBool TypeBool bool_and mod state x y
     interp_expr mod state (ExprOr x y) = interp_binop TypeBool TypeBool bool_or mod state x y
     interp_expr mod state (ExprNot x) = interp_unop TypeBool TypeBool not mod state x
+
+    interp_expr mod state (ExprCast x TypeInt TypeInt) = interp_unop TypeInt TypeInt id mod state x
+    interp_expr mod state (ExprCast x TypeInt TypeDouble) = interp_unop TypeInt TypeDouble int_to_double mod state x
+    interp_expr mod state (ExprCast x TypeInt TypeBool) = interp_unop TypeInt TypeBool int_to_bool mod state x
+    interp_expr mod state (ExprCast x TypeDouble TypeInt) = interp_unop TypeDouble TypeBool double_to_bool mod state x
+    interp_expr mod state (ExprCast x TypeDouble TypeDouble) = interp_unop TypeDouble TypeDouble id mod state x
+    interp_expr mod state (ExprCast x TypeDouble TypeBool) = interp_unop TypeDouble TypeBool double_to_bool mod state x
+    interp_expr mod state (ExprCast x TypeBool TypeInt) = interp_unop TypeBool TypeInt bool_to_int mod state x
+    interp_expr mod state (ExprCast x TypeBool TypeDouble) = interp_unop TypeBool TypeDouble bool_to_double mod state x
+    interp_expr mod state (ExprCast x TypeBool TypeBool) = interp_unop TypeBool TypeBool id mod state x
 
 
 public export
