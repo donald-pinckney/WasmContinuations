@@ -1,6 +1,6 @@
 module WasmDump
 
-import WasmAST
+import LangDefs.WasmAST
 
 %default covering
 

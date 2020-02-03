@@ -1,9 +1,11 @@
 module ToyInterp
 
-import ToyAST
+import LangDefs.ToyAST
+
+import Utils
+
 import Data.Vect
 import Data.Fin
-import Result
 
 %default covering
 

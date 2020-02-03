@@ -1,6 +1,5 @@
 module TDOP
 
--- import Debug.Trace
 import Data.String
 
 export

@@ -1,11 +1,13 @@
 module Parser
 
--- import T
-import TDOP
-import ToyAST
-import Tokenizer
+import Frontend.TDOP
+import Frontend.Tokenizer
 
-export
+import LangDefs.ToyAST
+
+import Utils
+
+public export
 data PExpr =
     PExprVar String | PExprValue Value
     | PExprDeclareVar Type' String PExpr PExpr
@@ -52,7 +54,7 @@ Show PExpr where
     show (PExprOr x y) = "(" ++ show x ++ ") || (" ++ show y ++ ")"
     show (PExprNot x) = "!(" ++ show x ++ ")"
 
-export
+public export
 record PFunc where
     constructor MkPFunc
     name : String
@@ -100,13 +102,6 @@ extractVar_expr _ = Left "expected var"
 --                 (others, rest) <- parse_list rest
 --                 ?opiuwerwe
 --             else pure ([next], rest)
-
-mapExcept : (a -> Either String b) -> List a -> Either String (List b)
-mapExcept f [] = Right []
-mapExcept f (x :: xs) = do
-    x' <- f x
-    xs' <- mapExcept f xs
-    pure (x' :: xs')
 
 exprHandler : TokenHandler Nat MyToken PExpr
 exprHandler (TokInt n) = MkTokenAction (Just $ \r_s,p => Right (PExprValue (ValueInt n), r_s)) Nothing Nothing
@@ -231,7 +226,7 @@ paramHandler (TokVar v) = MkTokenAction (Just $ \r_s,p => pure ((v, TypeInt), r_
 paramHandler TokRP = handle_group_right
 paramHandler TokComma = handle_group_right
 
-export
+
 parseFuncs : List MyToken -> Either String (List PFunc)
 parseFuncs [] = Right []
 parseFuncs (TokFunc :: rest) = do
@@ -261,3 +256,24 @@ parseFuncs (TokFunc :: rest) = do
     pure (func :: otherFuncs)
 
 parseFuncs (x :: xs) = Left "expected func keyword"
+
+
+
+-- The main function is checked to exist and will be the first function in the list
+export
+parseModule : List MyToken -> Either String (PFunc, List PFunc)
+parseModule xs = do
+    fs <- parseFuncs xs
+    let names = map name fs
+    let True = allUnique names
+        | False => Left "Duplicate function names!"
+    let [main_idx] = findIndices (\f => name f == "main") fs
+        | [] => Left "You must have a 'main' function!"
+        | otherwise => Left "unreachable"
+
+    let Just main_f = index' main_idx fs
+        | Nothing => Left "unreachable"
+    let [] = params main_f
+        | otherwise => Left "main function must have 0 parameters"
+
+    pure (main_f, replace_range fs main_idx 1 [])

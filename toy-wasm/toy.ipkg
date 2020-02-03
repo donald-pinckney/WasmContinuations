@@ -1,9 +1,4 @@
 package toy
 
-pkgs = contrib, baseline
-
-modules = Test.Toy, Test.Wasm
-
 executable = toyc
 main = Main
-tests = Test.Toy.testMain, Test.Wasm.testMain

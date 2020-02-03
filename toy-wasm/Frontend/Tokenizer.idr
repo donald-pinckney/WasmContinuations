@@ -1,8 +1,8 @@
 module Tokenizer
 
-import TDOP
+import Frontend.TDOP
+
 import Data.String
-import Debug.Trace
 
 %default covering
 

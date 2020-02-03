@@ -1,6 +1,7 @@
 module Optimizer
 
-import WasmAST
+import LangDefs.WasmAST
+import Utils
 
 %default covering
 
@@ -92,11 +93,7 @@ find_pattern pattern (x :: xs) = case find_pattern_head (length (x :: xs)) patte
 --             (start, len) <- find_pattern (p :: ps) xs
 --             Just (start + 1, len)
 
-replace_range : (xs : List a) -> (start : Int) -> (len : Int) -> (new : List a) -> List a
-replace_range xs start len new =
-    let before = take (cast start {to=Nat}) xs in
-    let after = drop (cast (start + len) {to=Nat}) xs in
-    before ++ new ++ after
+
 
 match_any_pattern : List RewriteRule -> List WasmInstr -> Maybe (Int, Int, List WasmInstr)
 match_any_pattern [] xs = Nothing
@@ -134,6 +131,5 @@ optimize_function : WasmFunction -> WasmFunction
 optimize_function (MkWasmFunction paramTypes resultType localTypes body id) = MkWasmFunction paramTypes resultType localTypes (optimize_instrs body) id
 
 export
-optimize_module : Bool -> WasmModule -> WasmModule
-optimize_module False m = m
-optimize_module True (MkWasmModule funcs start start_type) = MkWasmModule (map optimize_function funcs) start start_type
+optimize_module : WasmModule -> WasmModule
+optimize_module (MkWasmModule funcs start start_type) = MkWasmModule (map optimize_function funcs) start start_type

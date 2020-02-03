@@ -1,12 +1,12 @@
 func int main() {
-    hailstones(1000)
+    hailstones(10000000)
 }
 
 func int hailstones(int numTest) {
     let int i = 0;
     let int k = 1;
     while k <= numTest do
-        set i = i + hailstone(k);
+        set i = hailstone(k) + i;
         set k = k + 1;
         42
     end

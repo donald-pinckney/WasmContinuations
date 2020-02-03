@@ -1,7 +1,8 @@
 module ParseUtils
 
 import Data.Vect
-import Result
+
+import Utils
 
 public export
 SourceString : Type

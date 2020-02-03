@@ -1,12 +1,11 @@
-module ToyComp
+module Compiler
 
-import ToyAST
-import WasmAST
-import ToyInterp
-import WasmInterp
+import LangDefs.ToyAST
+import LangDefs.WasmAST
+import Backend.Optimizer
+
 import Data.Vect
 import Data.Fin
-import Optimizer
 
 %default covering
 
@@ -212,13 +211,14 @@ compile_function id (MkFuncDef returnType argumentTypes body) =
         (fst (compile_expr (toIntNat (length argumentTypes)) body))
         id
 
-compile_module' : Module nmfns -> WasmModule
-compile_module' (MkModule functions) =
+export
+compile_module : Module nmfns -> WasmModule
+compile_module (MkModule functions) =
     let main_f = head functions in
     let wasmFunctions = map_enum 0 compile_function (toList functions) in
     MkWasmModule wasmFunctions 0 (compile_type $ returnType main_f)
 
 
-export
-compile_module : Bool -> Module nmfns -> WasmModule
-compile_module optim m = optimize_module optim (compile_module' m)
+-- export
+-- compile_module : Bool -> Module nmfns -> WasmModule
+-- compile_module optim m = optimize_module optim (compile_module' m)

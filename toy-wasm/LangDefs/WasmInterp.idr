@@ -1,8 +1,10 @@
 module WasmInterp
 
-import WasmAST
+import LangDefs.WasmAST
+
+import Utils
+
 import Data.Bits
-import Result
 
 %default covering
 
