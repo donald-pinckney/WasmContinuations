@@ -229,6 +229,7 @@ exprHandler TokDo = handle_group_right
 exprHandler TokEnd = handle_group_right
 exprHandler TokRB = handle_group_right
 
+exprHandler otherwise = MkTokenAction Nothing Nothing Nothing
 
 export
 parseExpr : List MyToken -> Either String PExpr
@@ -242,6 +243,7 @@ paramHandler TokTypeBool = handle_prefix 1 (\(s, t) => (s, TypeBool))
 paramHandler (TokVar v) = MkTokenAction (Just $ \r_s,p => pure ((v, TypeInt), r_s)) Nothing Nothing -- type int will get replaced
 paramHandler TokRP = handle_group_right
 paramHandler TokComma = handle_group_right
+paramHandler otherwise = MkTokenAction Nothing Nothing Nothing
 
 
 parseFuncs : List MyToken -> Either String (List PFunc)

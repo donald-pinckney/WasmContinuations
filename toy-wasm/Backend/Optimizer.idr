@@ -17,11 +17,19 @@ constDropRule instrs = Nothing
 
 teeRule : RewriteRule
 teeRule [WasmInstrLocalSet l1, WasmInstrLocalGet l2] = if l1 == l2 then Just [WasmInstrLocalTee l1] else Nothing
-teeRule instr = Nothing
+teeRule instrs = Nothing
+
+mulAddRule : RewriteRule
+mulAddRule [WasmInstrLocalGet l, WasmInstrConst (WasmValueF64 v), WasmInstrF64Mul] = if v == 2.0 then Just [WasmInstrLocalGet l, WasmInstrLocalGet l, WasmInstrF64Add] else Nothing
+mulAddRule instrs = Nothing
 
 export
 is_small_int : Int -> Bool
 is_small_int x = x <= 5
+
+export
+is_small_float : Double -> Bool
+is_small_float x = x <= 5
 
 -- smallMulRule : RewriteRule
 -- smallMulRule [WasmInstrConst (WasmValueI64 n), WasmInstrI64Mul] = if n == 0 || n == 1 || not (is_small_int n)
@@ -41,10 +49,15 @@ Rules =
         ) (enumFromTo 1 62) ++
     [
         exactRule ([WasmInstrConst (WasmValueI64 1), WasmInstrI64Div_s], []),
+        exactRule ([WasmInstrConst (WasmValueF64 1), WasmInstrF64Div], []),
+        exactRule ([WasmInstrConst (WasmValueF64 1), WasmInstrF64Mul], []),
+        exactRule ([WasmInstrConst (WasmValueF64 0), WasmInstrF64Mul], [WasmInstrDrop, WasmInstrConst (WasmValueF64 0)]),
         exactRule ([WasmInstrConst (WasmValueI64 1), WasmInstrI64Mul], []),
         exactRule ([WasmInstrConst (WasmValueI64 0), WasmInstrI64Mul], [WasmInstrDrop, WasmInstrConst (WasmValueI64 0)]),
         exactRule ([WasmInstrConst (WasmValueI64 0), WasmInstrI64Add], []),
         exactRule ([WasmInstrConst (WasmValueI64 0), WasmInstrI64Sub], []),
+        exactRule ([WasmInstrConst (WasmValueF64 0), WasmInstrF64Add], []),
+        exactRule ([WasmInstrConst (WasmValueF64 0), WasmInstrF64Sub], []),
         exactRule ([WasmInstrConst (WasmValueI64 1), WasmInstrI64Rem_s], [WasmInstrDrop, WasmInstrConst (WasmValueI64 0)]),
         exactRule ([WasmInstrI64Eq, WasmInstrI32Eqz], [WasmInstrI64Neq]),
         exactRule ([WasmInstrI64Neq, WasmInstrI32Eqz], [WasmInstrI64Eq]),
@@ -54,7 +67,8 @@ Rules =
         exactRule ([WasmInstrI64Ge_s, WasmInstrI32Eqz], [WasmInstrI64Lt_s]),
         exactRule ([WasmInstrI64Gt_s, WasmInstrI32Eqz], [WasmInstrI64Le_s]),
         constDropRule,
-        teeRule
+        teeRule,
+        mulAddRule
     ]
 
 find_pattern_head : (len : Nat) -> (pattern : RewriteRule) -> (xs : List WasmInstr) -> Maybe (Int, Int, List WasmInstr)

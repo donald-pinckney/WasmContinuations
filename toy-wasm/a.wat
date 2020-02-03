@@ -34,24 +34,23 @@
 		get_local 1
 	)
 	(func $f2 (param f64) (result f64 ) (local i64)
-		i64.const 2
 		i64.const 0
 		get_local 0
 		i64.trunc_f64_s
 		i64.const 1
 		i64.and
 		i64.sub
-		i64.mul
+		i64.const 1
+		i64.shl
 		i64.const 1
 		i64.add
-		set_local 1
-		i64.const 4
-		get_local 1
-		i64.mul
+		tee_local 1
+		i64.const 2
+		i64.shl
 		f64.convert_i64_s
-		f64.const 2
 		get_local 0
-		f64.mul
+		get_local 0
+		f64.add
 		f64.const 1
 		f64.add
 		f64.div
