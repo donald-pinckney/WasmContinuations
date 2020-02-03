@@ -1,4 +1,6 @@
 package toy
 
+opts = "--O3"
+
 executable = toyc
 main = Main

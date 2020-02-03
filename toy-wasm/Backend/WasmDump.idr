@@ -97,13 +97,18 @@ dump_function : WasmFunction -> String
 dump_function (MkWasmFunction paramTypes resultType localTypes body id) =
     let paramsString = join_by (map (\t => "(param " ++ dump_type t ++ ")" ) paramTypes) " " in
     let localsString = join_by (map (\t => "(local " ++ dump_type t ++ ")" ) localTypes) " " in
-    "\t(func $f" ++ show id ++ " " ++ paramsString ++ " (result " ++ dump_type resultType ++ " ) " ++ localsString ++ "\n" ++
+    let retString = case resultType of
+                            Nothing => " "
+                            Just rt => " (result " ++ dump_type rt ++ " ) "
+    in
+    "\t(func $f" ++ show id ++ " " ++ paramsString ++ retString ++ localsString ++ "\n" ++
         dump_instrs 2 body ++
     "\n\t)"
 
+
 export
 dump_module : WasmModule -> String
-dump_module (MkWasmModule funcs start st) =
+dump_module (MkWasmModule funcs start (Just st)) =
     let st' = if st == WasmTypeI64 then WasmTypeI32 else st in
     "(module\n" ++
         "\t(import \"console\" \"log_i32\" (func $log_i32 (param i32)))\n" ++
@@ -111,5 +116,14 @@ dump_module (MkWasmModule funcs start st) =
         -- "\t(import \"console\" \"log_i64\" (func $log_i64 (param i64)))\n" ++
         (join_by (map dump_function funcs) "\n") ++ "\n" ++
         "\t(func $start\n\t\tcall $f" ++ show start ++ "\n\t\t" ++ (if st == WasmTypeI64 then "i32.wrap_i64\n\t\t" else "") ++ "call $log_" ++ dump_type st' ++ "\n\t)\n" ++
+        "\t(start $start)\n" ++
+    ")"
+dump_module (MkWasmModule funcs start Nothing) =
+    "(module\n" ++
+        "\t(import \"console\" \"log_i32\" (func $log_i32 (param i32)))\n" ++
+        "\t(import \"console\" \"log_f64\" (func $log_f64 (param f64)))\n" ++
+        -- "\t(import \"console\" \"log_i64\" (func $log_i64 (param i64)))\n" ++
+        (join_by (map dump_function funcs) "\n") ++ "\n" ++
+        "\t(func $start\n\t\tcall $f" ++ show start ++ "\n\t)\n" ++
         "\t(start $start)\n" ++
     ")"

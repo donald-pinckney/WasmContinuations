@@ -8,7 +8,6 @@ func int hailstones(int numTest) {
     while k <= numTest do
         set i = hailstone(k) + i;
         set k = k + 1;
-        42
     end
     i
 }

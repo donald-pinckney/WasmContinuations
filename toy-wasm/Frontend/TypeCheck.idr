@@ -37,7 +37,9 @@ mutual
     find_type fns context x = case check_type fns context x TypeInt of
         (Left err1) => case check_type fns context x TypeDouble of
             (Left err2) => case check_type fns context x TypeBool of
-                (Left err3) => Left "no valid type found"
+                (Left err3) => case check_type fns context x TypeUnit of
+                    (Left err4) => Left "no valid type found"
+                    (Right r) => Right (TypeUnit, r)
                 (Right r) => Right (TypeBool, r)
             (Right r) => Right (TypeDouble, r)
         (Right r) => Right (TypeInt, r)
@@ -59,7 +61,9 @@ mutual
     check_type fns context (PExprDeclareVar vt name initExpr after) t = do
         initExpr' <- check_type fns context initExpr vt
         afterExpr' <- check_type fns ((name, vt) :: context) after t
-        pure $ ExprDeclareVar vt initExpr' afterExpr'
+        case eq_unit vt of
+            (Yes prf) => Left "Can not declare variable of unit type."
+            (No contra) => pure $ ExprDeclareVar vt contra initExpr' afterExpr'
     check_type fns context (PExprUpdateVar name updateExpr after) t = do
         (debruijn, vt) <- lookup_context context name
         updateExpr' <- check_type fns context updateExpr vt
@@ -72,8 +76,8 @@ mutual
             then Left ("Expected " ++ show (length pts) ++ " arguments, received " ++ show (length args))
             else do
                 let pts_args = zip pts args
-                args' <- mapExcept (\pt_arg => check_type fns context (snd pt_arg) (fst pt_arg)) pts_args
-                pure $ ExprCall f_idx args'
+                args' <- (mapExcept (\pt_arg => check_type fns context (snd pt_arg) (fst pt_arg)) pts_args)
+                pure $ ExprCall f_idx (fst args')
     check_type fns context (PExprIf cond tr fa) t =
         [ExprIf cond' t tr' fa' |
             cond' <- check_type fns context cond TypeBool,
@@ -83,54 +87,60 @@ mutual
     check_type fns context (PExprWhile cond body after) t =
         [ExprWhile cond' body' after' |
             cond' <- check_type fns context cond TypeBool,
-            (body_t, body') <- find_type fns context body,
+            body' <- check_type fns context body TypeUnit,
             after' <- check_type fns context after t
         ]
     check_type fns context (PExprAdd x y) TypeInt = check_binary ExprIAdd fns context TypeInt x y
     check_type fns context (PExprAdd x y) TypeDouble = check_binary ExprFAdd fns context TypeDouble x y
     check_type fns context (PExprAdd x y) TypeBool = Left "+ does not return bool"
+    check_type fns context (PExprAdd x y) TypeUnit = Left "+ does not return unit"
     check_type fns context (PExprSub x y) TypeInt = check_binary ExprISub fns context TypeInt x y
     check_type fns context (PExprSub x y) TypeDouble = check_binary ExprFSub fns context TypeDouble x y
     check_type fns context (PExprSub x y) TypeBool = Left "- does not return bool"
+    check_type fns context (PExprSub x y) TypeUnit = Left "- does not return unit"
     check_type fns context (PExprNeg x) TypeInt = [ExprINeg x' | x' <- check_type fns context x TypeInt]
     check_type fns context (PExprNeg x) TypeDouble = [ExprFNeg x' | x' <- check_type fns context x TypeDouble]
     check_type fns context (PExprNeg x) TypeBool = Left "- does not return bool"
+    check_type fns context (PExprNeg x) TypeUnit = Left "- does not return unit"
     check_type fns context (PExprMul x y) TypeInt = check_binary ExprIMul fns context TypeInt x y
     check_type fns context (PExprMul x y) TypeDouble = check_binary ExprFMul fns context TypeDouble x y
     check_type fns context (PExprMul x y) TypeBool = Left "* does not return bool"
+    check_type fns context (PExprMul x y) TypeUnit = Left "* does not return unit"
     check_type fns context (PExprDiv x y) TypeInt = check_binary ExprIDiv fns context TypeInt x y
     check_type fns context (PExprDiv x y) TypeDouble = check_binary ExprFDiv fns context TypeDouble x y
     check_type fns context (PExprDiv x y) TypeBool = Left "/ does not return bool"
+    check_type fns context (PExprDiv x y) TypeUnit = Left "/ does not return unit"
     check_type fns context (PExprMod x y) TypeInt = check_binary ExprIMod fns context TypeInt x y
     check_type fns context (PExprMod x y) TypeDouble = Left "% does not return float"
     check_type fns context (PExprMod x y) TypeBool = Left "% does not return bool"
+    check_type fns context (PExprMod x y) TypeUnit = Left "- does not return unit"
     check_type fns context (PExprGT x y) TypeBool = do
         (x_t, x') <- find_type fns context x
-        if x_t == TypeBool then Left "can not compare bools" else do
+        if x_t == TypeBool || x_t == TypeUnit then Left "can not compare bools or units" else do
             y' <- check_type fns context y x_t
             pure $ (if x_t == TypeInt then ExprIGT else ExprFGT) x' y'
     check_type fns context (PExprGT x y) t = Left $ "> does not return " ++ show t
     check_type fns context (PExprGTE x y) TypeBool = do
         (x_t, x') <- find_type fns context x
-        if x_t == TypeBool then Left "can not compare bools" else do
+        if x_t == TypeBool || x_t == TypeUnit then Left "can not compare bools or units" else do
             y' <- check_type fns context y x_t
             pure $ (if x_t == TypeInt then ExprIGTE else ExprFGTE) x' y'
     check_type fns context (PExprGTE x y) t = Left $ ">= does not return " ++ show t
     check_type fns context (PExprEQ x y) TypeBool = do
         (x_t, x') <- find_type fns context x
-        if x_t == TypeBool then Left "can not compare bools" else do
+        if x_t == TypeBool || x_t == TypeUnit then Left "can not compare bools or units" else do
             y' <- check_type fns context y x_t
             pure $ (if x_t == TypeInt then ExprIEQ else ExprFEQ) x' y'
     check_type fns context (PExprEQ x y) t = Left $ "== does not return " ++ show t
     check_type fns context (PExprLTE x y) TypeBool = do
         (x_t, x') <- find_type fns context x
-        if x_t == TypeBool then Left "can not compare bools" else do
+        if x_t == TypeBool || x_t == TypeUnit then Left "can not compare bools or units" else do
             y' <- check_type fns context y x_t
             pure $ (if x_t == TypeInt then ExprILTE else ExprFLTE) x' y'
     check_type fns context (PExprLTE x y) t = Left $ "<= does not return " ++ show t
     check_type fns context (PExprLT x y) TypeBool = do
         (x_t, x') <- find_type fns context x
-        if x_t == TypeBool then Left "can not compare bools" else do
+        if x_t == TypeBool || x_t == TypeUnit then Left "can not compare bools or units" else do
             y' <- check_type fns context y x_t
             pure $ (if x_t == TypeInt then ExprILT else ExprFLT) x' y'
     check_type fns context (PExprLT x y) t = Left $ "< does not return " ++ show t
@@ -145,6 +155,12 @@ mutual
         (x_t, x') <- find_type fns context x
         pure (ExprCast x' x_t t)
 
+check_all_not_unit : (ts : List Type') -> Either String (out_ts : List (t : Type' ** Not (t = TypeUnit)) ** length out_ts = length ts)
+check_all_not_unit xs = mapExcept (\t => case eq_unit t of
+    (Yes prf) => Left "Can not have a unit as a function parameter"
+    (No contra) => Right (t ** contra)
+) xs
+
 typeCheckFunc : (funcTypes : Vect fns (String, Type', List Type')) -> PFunc -> Either String (FuncDef fns)
 typeCheckFunc funcTypes (MkPFunc name returnType params body) =
     let context = reverse (fromList params) in
@@ -152,7 +168,8 @@ typeCheckFunc funcTypes (MkPFunc name returnType params body) =
         then Left "Error: duplicate parameter names"
         else do
             body' <- check_type funcTypes context body returnType
-            pure $ MkFuncDef returnType (map snd params) (rewrite mapPreservesLength Prelude.Basics.snd params in body')
+            (param_types ** same_len) <- check_all_not_unit (map snd params)
+            pure $ MkFuncDef returnType param_types (rewrite same_len in rewrite mapPreservesLength Prelude.Basics.snd params in body')
 
 getFuncType : PFunc -> (String, Type', List Type')
 getFuncType (MkPFunc name returnType params body) = (name, returnType, map snd params)
@@ -161,7 +178,5 @@ export
 typeCheckModule : (fns : (PFunc, List PFunc)) -> Either String (Module (length (snd fns)))
 typeCheckModule (f, fs) =
     let funcs = f :: fromList fs in
-    -- let names = map name funcs in
     let types = map getFuncType funcs in
-    -- ?powerwee
     [MkModule checked_fns | checked_fns <- mapExcept (typeCheckFunc types) funcs]

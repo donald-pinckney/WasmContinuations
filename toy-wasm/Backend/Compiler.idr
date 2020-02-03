@@ -13,34 +13,47 @@ map_enum : Int -> (Int -> a -> b) -> List a -> List b
 map_enum acc f [] = []
 map_enum acc f (x :: xs) = f acc x :: map_enum (acc + 1) f xs
 
-valueToWasmValue : Value -> WasmValue
-valueToWasmValue (ValueInt x) = WasmValueI64 x
-valueToWasmValue (ValueFloat x) = WasmValueF64 x
-valueToWasmValue (ValueBool True) = WasmValueI32 1
-valueToWasmValue (ValueBool False) = WasmValueI32 0
+valueToWasmValue : (v : Value) -> Not (typeOfValue v = TypeUnit) -> WasmValue
+valueToWasmValue (ValueInt x) prf = WasmValueI64 x
+valueToWasmValue (ValueFloat x) prf = WasmValueF64 x
+valueToWasmValue (ValueBool True) prf = WasmValueI32 1
+valueToWasmValue (ValueBool False) prf = WasmValueI32 0
+valueToWasmValue ValueUnit prf = void $ prf Refl
 
-compile_type : Type' -> WasmType
-compile_type TypeInt = WasmTypeI64
-compile_type TypeDouble = WasmTypeF64
-compile_type TypeBool = WasmTypeI32
+compile_type : (t : Type') -> Not (t = TypeUnit) -> WasmType
+compile_type TypeInt prf = WasmTypeI64
+compile_type TypeDouble prf = WasmTypeF64
+compile_type TypeBool prf = WasmTypeI32
+compile_type TypeUnit prf = void $ prf Refl
 
+opt_compile_type : Type' -> Maybe WasmType
+opt_compile_type TypeInt = Just WasmTypeI64
+opt_compile_type TypeDouble = Just WasmTypeF64
+opt_compile_type TypeBool = Just WasmTypeI32
+opt_compile_type TypeUnit = Nothing
 
 cast_instrs : (t : Type') -> (to_t : Type') -> List WasmInstr
 cast_instrs TypeInt TypeDouble = [WasmInstrF64ConvertI64_s]
 cast_instrs TypeInt TypeBool = [WasmInstrI64Eqz, WasmInstrI32Eqz]
+cast_instrs TypeInt TypeUnit = [WasmInstrDrop]
 cast_instrs TypeDouble TypeInt = [WasmInstrI64TruncF64_s]
 cast_instrs TypeDouble TypeBool = [WasmInstrConst (WasmValueF64 0), WasmInstrF64Neq]
+cast_instrs TypeDouble TypeUnit = [WasmInstrDrop]
 cast_instrs TypeBool TypeInt = [WasmInstrI64ExtendI32_s]
 cast_instrs TypeBool TypeDouble = [WasmInstrF64ConvertI32_s]
+cast_instrs TypeBool TypeUnit = [WasmInstrDrop]
+cast_instrs TypeUnit TypeInt = [WasmInstrConst (WasmValueI64 0)]
+cast_instrs TypeUnit TypeDouble = [WasmInstrConst (WasmValueF64 0)]
+cast_instrs TypeUnit TypeBool = [WasmInstrConst (WasmValueI32 0)]
 cast_instrs TypeInt TypeInt = []
 cast_instrs TypeDouble TypeDouble = []
 cast_instrs TypeBool TypeBool = []
+cast_instrs TypeUnit TypeUnit = []
 
-
-lift_local_decls : Expr d fns -> List Type'
+lift_local_decls : Expr d fns -> List (t : Type' ** Not (t = TypeUnit))
 lift_local_decls (ExprValue x) = []
 lift_local_decls (ExprVar var) = []
-lift_local_decls (ExprDeclareVar t initExpr after) = t :: (lift_local_decls initExpr ++ lift_local_decls after)
+lift_local_decls (ExprDeclareVar t not_unit initExpr after) = (t ** not_unit) :: (lift_local_decls initExpr ++ lift_local_decls after)
 lift_local_decls (ExprUpdateVar var newExpr after) = lift_local_decls newExpr ++ lift_local_decls after
 lift_local_decls (ExprCall f args) = foldl (\decls,arg => lift_local_decls arg ++ decls) [] args
 lift_local_decls (ExprIf cond t true false) = lift_local_decls cond ++ lift_local_decls true ++ lift_local_decls false
@@ -80,9 +93,11 @@ is_small_float_expr (ExprValue (ValueFloat x)) = is_small_float x
 is_small_float_expr e = False
 
 compile_expr : Int -> Expr d fns -> (List WasmInstr, Int)
-compile_expr numBound (ExprValue x) = ([WasmInstrConst (valueToWasmValue x)], numBound)
+compile_expr numBound (ExprValue x) = case eq_unit (typeOfValue x) of
+    (Yes prf) => ([], numBound)
+    (No contra) => ([WasmInstrConst (valueToWasmValue x contra)], numBound)
 compile_expr numBound (ExprVar var) = ([WasmInstrLocalGet (numBound - (toIntNat $ finToNat var) - 1)], numBound)
-compile_expr numBound (ExprDeclareVar t initExpr after) =
+compile_expr numBound (ExprDeclareVar t not_unit initExpr after) =
     let (i_instrs, numBound') = compile_expr numBound initExpr in
     let (a_instrs, numBound'') = compile_expr (1 + numBound') after in
     (i_instrs ++ (WasmInstrLocalSet numBound' :: a_instrs), numBound'')
@@ -100,7 +115,7 @@ compile_expr numBound (ExprIf cond t true false) =
     let (cond_ins, numBound') = compile_expr numBound cond in
     let (true_ins, numBound'') = compile_expr numBound' true in
     let (false_ins, numBound''') = compile_expr numBound'' false in
-    (cond_ins ++ [WasmInstrIf (Just $ compile_type t) true_ins false_ins], numBound''')
+    (cond_ins ++ [WasmInstrIf (opt_compile_type t) true_ins false_ins], numBound''')
 compile_expr numBound (ExprWhile cond body after) =
     let (cond_ins, numBound') = compile_expr numBound cond in
     let (body_ins, numBound'') = compile_expr numBound' body in
@@ -108,7 +123,7 @@ compile_expr numBound (ExprWhile cond body after) =
     (WasmInstrBlock Nothing (
         cond_ins ++ [WasmInstrI32Eqz, WasmInstrBrIf 0] ++
         [WasmInstrLoop Nothing (
-            body_ins ++ [WasmInstrDrop] ++ cond_ins ++ [WasmInstrBrIf 0]
+            body_ins ++ cond_ins ++ [WasmInstrBrIf 0]
         )]
     ) :: after_ins, numBound''')
 compile_expr numBound (ExprIAdd x y) =
@@ -161,9 +176,6 @@ compile_expr numBound (ExprIMod x y) =
     let (xins, numBound') = compile_expr numBound x in
     let (yins, numBound'') = compile_expr numBound' y in
     (xins ++ yins ++ [WasmInstrI64Rem_s], numBound'')
-    -- if yins == [WasmInstrConst (WasmValueI64 2)]
-    --     then (xins ++ [WasmInstrConst (WasmValueI64 1), WasmInstrI64And], numBound'')
-    --     else (xins ++ yins ++ [WasmInstrI64Rem_s], numBound'')
 compile_expr numBound (ExprIGT x y) =
     let (xins, numBound') = compile_expr numBound x in
     let (yins, numBound'') = compile_expr numBound' y in
@@ -221,10 +233,13 @@ compile_expr numBound (ExprCast x t to_t) =
 
 compile_function : Int -> FuncDef fns -> WasmFunction
 compile_function id (MkFuncDef returnType argumentTypes body) =
+    let param_types = (map (\at_not_unit => compile_type (Prelude.Pairs.DPair.fst at_not_unit) (Prelude.Pairs.DPair.snd at_not_unit)) argumentTypes) in
+    let ret_type = opt_compile_type returnType in
+    let local_types = (map (\at_not_unit => compile_type (Prelude.Pairs.DPair.fst at_not_unit) (Prelude.Pairs.DPair.snd at_not_unit)) (lift_local_decls body)) in
     MkWasmFunction
-        (map compile_type argumentTypes)
-        (compile_type returnType)
-        (map compile_type (lift_local_decls body))
+        param_types
+        ret_type
+        local_types
         (fst (compile_expr (toIntNat (length argumentTypes)) body))
         id
 
@@ -233,7 +248,7 @@ compile_module : Module nmfns -> WasmModule
 compile_module (MkModule functions) =
     let main_f = head functions in
     let wasmFunctions = map_enum 0 compile_function (toList functions) in
-    MkWasmModule wasmFunctions 0 (compile_type $ returnType main_f)
+    MkWasmModule wasmFunctions 0 (opt_compile_type $ returnType main_f)
 
 
 -- export

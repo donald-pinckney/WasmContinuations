@@ -8,7 +8,6 @@ func float pi(int numTerms) {
     while k < numTerms do
         set f = f + term(k to float);
         set k = k + 1;
-        42
     end
     f
 }

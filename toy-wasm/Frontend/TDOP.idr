@@ -112,6 +112,11 @@ headMatches f [] = (Nothing, [])
 headMatches f (x :: xs) = if f x then (Just x, xs) else (Nothing, x :: xs)
 
 export
+testHead : (a -> Bool) -> List a -> Bool
+testHead f [] = False
+testHead f (x :: xs) = f x
+
+export
 matchStart : Eq a => List a -> List a -> (Bool, List a)
 matchStart [] xs = (True, xs)
 matchStart (p :: ps) [] = (False, [])

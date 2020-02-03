@@ -65,6 +65,7 @@ assert_type : (t : Type') -> Value -> Result (idrisTypeOfType t)
 assert_type TypeInt (ValueInt x) = Right x
 assert_type TypeDouble (ValueFloat x) = Right x
 assert_type TypeBool (ValueBool x) = Right x
+assert_type TypeUnit ValueUnit = Right ()
 assert_type t x = Left $ "Expected " ++ show t ++ " got " ++ show (typeOfValue x) ++ " (" ++ show x ++ ")"
 
 public export
@@ -72,6 +73,7 @@ idris_val_to_value : idrisTypeOfType t -> Value
 idris_val_to_value {t = TypeInt} x = ValueInt x
 idris_val_to_value {t = TypeDouble} x = ValueFloat x
 idris_val_to_value {t = TypeBool} x = ValueBool x
+idris_val_to_value {t = TypeUnit} x = ValueUnit
 
 mutual
     public export
@@ -106,21 +108,23 @@ mutual
 
     public export
     interp_call : Module nmfns -> FuncDef (S nmfns) -> List Value -> Result Value
-    interp_call mod (MkFuncDef returnType argumentTypes body) args =
+    interp_call mod (MkFuncDef returnType argumentTypes' body) args =
+        let argumentTypes = map fst argumentTypes' in
+        let prf_len : (length argumentTypes = length argumentTypes') = mapPreservesLength fst argumentTypes' in
         case decEq (length argumentTypes) (length args) of
             (No contra) => Left $ "Wrong number of arguments. Expected " ++ (show (length argumentTypes)) ++ " got " ++ (show (length args))
             (Yes prf) => case (map typeOfValue args) == argumentTypes of
                 False => Left $ "Wrong argument type (somewhere)"
                 True => do
                     let initialState = fromList args
-                    (res, newState) <- interp_expr {cd=length argumentTypes} mod (rewrite prf in initialState) body
+                    (res, newState) <- interp_expr {cd=length argumentTypes'} mod (rewrite sym prf_len in rewrite prf in initialState) body
                     pure res
 
     public export
     interp_expr : Module nmfns -> State cd -> Expr cd (S nmfns) -> Result (Value, State cd)
     interp_expr mod state (ExprValue x) = Right (x, state)
     interp_expr mod state (ExprVar var) = Right (lookup_state state var, state)
-    interp_expr mod state (ExprDeclareVar t initExpr after) = do
+    interp_expr mod state (ExprDeclareVar t not_unit initExpr after) = do
         (init_v, state') <- interp_expr mod state initExpr
         assert_type t init_v
         let state'' = init_v :: state'
@@ -180,12 +184,22 @@ mutual
     interp_expr mod state (ExprCast x TypeInt TypeInt) = interp_unop TypeInt TypeInt id mod state x
     interp_expr mod state (ExprCast x TypeInt TypeDouble) = interp_unop TypeInt TypeDouble int_to_double mod state x
     interp_expr mod state (ExprCast x TypeInt TypeBool) = interp_unop TypeInt TypeBool int_to_bool mod state x
+    interp_expr mod state (ExprCast x TypeInt TypeUnit) = interp_unop TypeInt TypeUnit (const ()) mod state x
+
     interp_expr mod state (ExprCast x TypeDouble TypeInt) = interp_unop TypeDouble TypeBool double_to_bool mod state x
     interp_expr mod state (ExprCast x TypeDouble TypeDouble) = interp_unop TypeDouble TypeDouble id mod state x
     interp_expr mod state (ExprCast x TypeDouble TypeBool) = interp_unop TypeDouble TypeBool double_to_bool mod state x
+    interp_expr mod state (ExprCast x TypeDouble TypeUnit) = interp_unop TypeDouble TypeUnit (const ()) mod state x
+
     interp_expr mod state (ExprCast x TypeBool TypeInt) = interp_unop TypeBool TypeInt bool_to_int mod state x
     interp_expr mod state (ExprCast x TypeBool TypeDouble) = interp_unop TypeBool TypeDouble bool_to_double mod state x
     interp_expr mod state (ExprCast x TypeBool TypeBool) = interp_unop TypeBool TypeBool id mod state x
+    interp_expr mod state (ExprCast x TypeBool TypeUnit) = interp_unop TypeBool TypeUnit (const ()) mod state x
+
+    interp_expr mod state (ExprCast x TypeUnit TypeInt) = interp_unop TypeUnit TypeInt (const 0) mod state x
+    interp_expr mod state (ExprCast x TypeUnit TypeDouble) = interp_unop TypeUnit TypeDouble (const 0) mod state x
+    interp_expr mod state (ExprCast x TypeUnit TypeBool) = interp_unop TypeUnit TypeBool (const False) mod state x
+    interp_expr mod state (ExprCast x TypeUnit TypeUnit) = interp_unop TypeUnit TypeUnit id mod state x
 
 
 public export

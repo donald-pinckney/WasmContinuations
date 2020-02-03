@@ -74,6 +74,7 @@ isTypeTok : MyToken -> Bool
 isTypeTok TokTypeInt = True
 isTypeTok TokTypeFloat = True
 isTypeTok TokTypeBool = True
+isTypeTok TokTypeUnit = True
 isTypeTok _ = False
 
 isVarTok : MyToken -> Bool
@@ -84,6 +85,7 @@ coerceToType : MyToken -> Either String Type'
 coerceToType TokTypeBool = Right TypeBool
 coerceToType TokTypeInt = Right TypeInt
 coerceToType TokTypeFloat = Right TypeDouble
+coerceToType TokTypeUnit = Right TypeUnit
 coerceToType _ = Left "expected type"
 
 extractVar : MyToken -> Either String String
@@ -95,6 +97,19 @@ extractVar_expr (PExprVar x) = Right x
 extractVar_expr _ = Left "expected var"
 
 
+isStartOfExpr : MyToken -> Bool
+isStartOfExpr (TokVar x) = True
+isStartOfExpr (TokInt x) = True
+isStartOfExpr (TokBool x) = True
+isStartOfExpr (TokFloat x) = True
+isStartOfExpr TokSub = True
+isStartOfExpr TokLP = True
+isStartOfExpr TokNot = True
+isStartOfExpr TokIf = True
+isStartOfExpr TokWhile = True
+isStartOfExpr TokLet = True
+isStartOfExpr TokSet = True
+isStartOfExpr otherwise = False
 
 
 -- = \rest =>
@@ -188,8 +203,12 @@ exprHandler TokSet =
             rest <- match TokEq rest
             (initExpr, rest) <- p (precedence 0) rest
             rest <- match TokSemi rest
-            (after, rest) <- p (precedence 0) rest
-            pure (PExprUpdateVar v initExpr after, rest)
+            let has_expr_after = testHead isStartOfExpr rest
+            if has_expr_after then do
+                (after, rest) <- p (precedence 0) rest
+                pure (PExprUpdateVar v initExpr after, rest)
+            else
+                pure (PExprUpdateVar v initExpr (PExprValue ValueUnit), rest)
         )
         Nothing
         Nothing
@@ -220,8 +239,12 @@ exprHandler TokWhile =
             (body, rest) <- p (precedence 0) rest
             let (Right rest) = match TokEnd rest
                 | Left err => Left err
-            (after, rest) <- p (precedence 0) rest
-            pure (PExprWhile cond body after, rest)
+            let has_expr_after = testHead isStartOfExpr rest
+            if has_expr_after then do
+                (after, rest) <- p (precedence 0) rest
+                pure (PExprWhile cond body after, rest)
+            else
+                pure (PExprWhile cond body (PExprValue ValueUnit), rest)
         )
         Nothing
         Nothing
@@ -240,6 +263,7 @@ paramHandler : TokenHandler Nat MyToken (String, Type')
 paramHandler TokTypeInt = handle_prefix 1 (\(s, t) => (s, TypeInt))
 paramHandler TokTypeFloat = handle_prefix 1 (\(s, t) => (s, TypeDouble))
 paramHandler TokTypeBool = handle_prefix 1 (\(s, t) => (s, TypeBool))
+paramHandler TokTypeUnit = MkTokenAction Nothing Nothing Nothing
 paramHandler (TokVar v) = MkTokenAction (Just $ \r_s,p => pure ((v, TypeInt), r_s)) Nothing Nothing -- type int will get replaced
 paramHandler TokRP = handle_group_right
 paramHandler TokComma = handle_group_right

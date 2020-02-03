@@ -22,12 +22,12 @@ namespace nat
 
 namespace list
     export
-    mapExcept : (a -> Either e b) -> List a -> Either e (List b)
-    mapExcept f [] = Right []
+    mapExcept : (a -> Either e b) -> (input : List a) -> Either e (out : List b ** length out = length input)
+    mapExcept f [] = Right ([] ** Refl)
     mapExcept f (x :: xs) = do
         x' <- f x
-        xs' <- mapExcept f xs
-        pure (x' :: xs')
+        (xs' ** prf') <- mapExcept f xs
+        pure (x' :: xs' ** cong prf')
 
 namespace vect
     export

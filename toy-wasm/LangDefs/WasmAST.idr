@@ -78,7 +78,7 @@ public export
 record WasmFunction where
     constructor MkWasmFunction
     paramTypes : List WasmType
-    resultType : WasmType
+    resultType : Maybe WasmType
     localTypes : List WasmType
     body : List WasmInstr
     id : Int
@@ -88,7 +88,7 @@ record WasmModule where
     constructor MkWasmModule
     funcs : List WasmFunction
     start : Int
-    start_type : WasmType
+    start_type : Maybe WasmType
     -- TODO: linear memory
 
 
