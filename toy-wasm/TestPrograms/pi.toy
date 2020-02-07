@@ -1,5 +1,5 @@
 func float main() {
-    pi(1000000000)
+    pi(100000000)
 }
 
 func float pi(int numTerms) {

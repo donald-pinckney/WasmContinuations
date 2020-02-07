@@ -46,7 +46,7 @@ Rules =
         ) (enumFromTo 1 62) ++
     map (\bits => exactRule ([WasmInstrConst (WasmValueI64 (shiftL 1 bits)), WasmInstrI64Rem_s],
                [WasmInstrConst (WasmValueI64 (shiftL 1 (bits - 1))), WasmInstrI64And])
-        ) (enumFromTo 1 62) ++
+        ) (enumFromTo 1 62) ++ -- x % (2^bits) = x & (2^bits - 1)
     [
         exactRule ([WasmInstrConst (WasmValueI64 1), WasmInstrI64Div_s], []),
         exactRule ([WasmInstrConst (WasmValueF64 1), WasmInstrF64Div], []),

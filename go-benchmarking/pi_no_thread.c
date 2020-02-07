@@ -5,7 +5,8 @@
 #include <stdlib.h>
 
 double term(double k) {
-	return 4 * pow(-1.0, k) / (2*k + 1);
+    int sign = 2 * -((int)k % 2 ) + 1;
+	return 4 * sign / (2*k + 1);
 }
 
 double pi(int numTerms) {
