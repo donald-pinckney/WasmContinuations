@@ -244,8 +244,8 @@ compile_function id (MkFuncDef returnType argumentTypes body) =
         id
 
 export
-compile_module : Module nmfns -> WasmModule
-compile_module (MkModule functions) =
+compile_module : Bool -> Module nmfns -> WasmModule
+compile_module heap_stack (MkModule functions) =
     let main_f = head functions in
     let wasmFunctions = map_enum 0 compile_function (toList functions) in
     MkWasmModule wasmFunctions 0 (opt_compile_type $ returnType main_f)

@@ -21,7 +21,7 @@ compilerPipeline optim heap_stack str = do
     toks <- tokenize str
     p <- parseModule toks
     ast <- typeCheckModule p
-    let mod = compile_module ast
+    let mod = compile_module heap_stack ast
     let optim_mod = (if optim then optimize_module else id) mod
     pure optim_mod
 

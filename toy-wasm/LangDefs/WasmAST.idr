@@ -21,14 +21,14 @@ idrisTypeOfWasmType WasmTypeI32 = Int
 idrisTypeOfWasmType WasmTypeF64 = Double
 
 public export
-data WasmInstr' v local func label t =  WasmInstrConst v
+data WasmInstr' v local func label t offset global = WasmInstrConst v
                 | WasmInstrDrop
                 | WasmInstrLocalGet local
                 | WasmInstrLocalSet local
                 | WasmInstrLocalTee local
-                | WasmInstrBlock (Maybe t) (List (WasmInstr' v local func label t))
-                | WasmInstrIf (Maybe t) (List (WasmInstr' v local func label t)) (List (WasmInstr' v local func label t))
-                | WasmInstrLoop (Maybe t) (List (WasmInstr' v local func label t))
+                | WasmInstrBlock (Maybe t) (List (WasmInstr' v local func label t offset global))
+                | WasmInstrIf (Maybe t) (List (WasmInstr' v local func label t offset global)) (List (WasmInstr' v local func label t offset global))
+                | WasmInstrLoop (Maybe t) (List (WasmInstr' v local func label t offset global))
                 | WasmInstrBr label
                 | WasmInstrBrIf label
                 | WasmInstrCall func
@@ -69,10 +69,19 @@ data WasmInstr' v local func label t =  WasmInstrConst v
                 | WasmInstrF64ConvertI64_s
                 | WasmInstrF64Neq
 
+                | WasmInstrI64Load offset
+                | WasmInstrI32Load offset
+                | WasmInstrF64Load offset
+                | WasmInstrI64Store offset
+                | WasmInstrI32Store offset
+                | WasmInstrF64Store offset
+                | WasmInstrGlobalGet global
+                | WasmInstrGlobalSet global
+
 
 public export
 WasmInstr : Type
-WasmInstr = WasmInstr' WasmValue Int Int Int WasmType
+WasmInstr = WasmInstr' WasmValue Int Int Int WasmType Int Int
 
 public export
 record WasmFunction where
