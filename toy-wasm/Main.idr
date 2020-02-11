@@ -16,8 +16,8 @@ import ArgParse
 
 %default covering
 
-compilerPipeline : Bool -> String -> Either String WasmModule
-compilerPipeline optim str = do
+compilerPipeline : (optim : Bool) -> (heap_stack : Bool) -> String -> Either String WasmModule
+compilerPipeline optim heap_stack str = do
     toks <- tokenize str
     p <- parseModule toks
     ast <- typeCheckModule p
@@ -31,6 +31,7 @@ record ArgumentConfig where
     in_f : String
     out_name : String
     do_optim : Bool
+    heap_stack : Bool
 
 out_wat_f : ArgumentConfig -> String
 out_wat_f x = (out_name x) ++ ".wat"
@@ -38,28 +39,21 @@ out_wat_f x = (out_name x) ++ ".wat"
 out_wasm_f : ArgumentConfig -> String
 out_wasm_f x = (out_name x) ++ ".wasm"
 
-argumentParser : StateT (List String) (Either String) ArgumentConfig
-argumentParser = do
-    do_optim <- matchFlag "-O"
-    out_f <- matchDefaultOption "-o" "a"
-    in_f <- assertOnlyArgument
-    pure $ MkArgumentConfig in_f out_f do_optim
-
 main : IO ()
 main = do
     Right config <- parseArgs (do
         do_optim <- matchFlag "-O"
+        heap_stack <- matchFlag "--heap-stack"
         out_f <- matchDefaultOption "-o" "a"
         in_f <- assertOnlyArgument
-        pure $ MkArgumentConfig in_f out_f do_optim
+        pure $ MkArgumentConfig in_f out_f do_optim heap_stack
     ) | Left err => putStrLn ("Error parsing arguments: " ++ err)
 
     Right prog_str <- readFile (in_f config)
         | Left err => putStrLn ("Error reading input file '" ++ (in_f config) ++ "': " ++ show err)
 
-    let Right mod = compilerPipeline (do_optim config) prog_str
+    let Right mod = compilerPipeline (do_optim config) (heap_stack config) prog_str
         | Left err => putStrLn ("Error: " ++ err)
-
 
     let wasm_txt = dump_module mod
     Right () <- writeFile (out_wat_f config) wasm_txt
