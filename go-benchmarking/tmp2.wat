@@ -1,5 +1,6 @@
 ;;                                ???                       sp z   i       s
-(func $main.stuff (type 0) (param i32) (result i32) (local i32 i64 i64 i64 f64)
+(func $main.stuff (type 0) (param i32) (result i32)
+    (local i32 i64 i64 i64 f64)
     (local.set 1
       (global.get 0))
     (block  ;; label = @1

@@ -3,6 +3,7 @@ package main
 import "fmt"
 import "strconv"
 import "os"
+import "runtime"
 
 func main() {
 	a, _ := strconv.Atoi(os.Args[1])
@@ -20,7 +21,7 @@ func stuff(ch chan float64, x int, y int) float64 {
 	s := 0.0
 	for i := 0; i < z; i++ {
 		f := float64(i + i*i);
-
+		runtime.Gosched()
 		s += f;
 	}
 	return s
