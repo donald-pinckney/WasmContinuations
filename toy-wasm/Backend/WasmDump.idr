@@ -23,9 +23,9 @@ mutual
     dump_instr tab (WasmInstrConst (WasmValueF64 x)) = (tab_str tab) ++ "f64.const " ++ show x
     dump_instr tab (WasmInstrConst (WasmValueI32 x)) = (tab_str tab) ++ "i32.const " ++ show x
     dump_instr tab WasmInstrDrop = (tab_str tab) ++ "drop"
-    dump_instr tab (WasmInstrLocalGet x) = (tab_str tab) ++ "get_local " ++ show x
-    dump_instr tab (WasmInstrLocalSet x) = (tab_str tab) ++ "set_local " ++ show x
-    dump_instr tab (WasmInstrLocalTee x) = (tab_str tab) ++ "tee_local " ++ show x
+    dump_instr tab (WasmInstrLocalGet x) = (tab_str tab) ++ "local.get " ++ show x
+    dump_instr tab (WasmInstrLocalSet x) = (tab_str tab) ++ "local.set " ++ show x
+    dump_instr tab (WasmInstrLocalTee x) = (tab_str tab) ++ "local.tee " ++ show x
     dump_instr tab (WasmInstrBlock Nothing xs) = (tab_str tab) ++ "(block\n" ++
                                                 dump_instrs (S tab) xs ++
                                             "\n" ++ (tab_str tab) ++ ")"
