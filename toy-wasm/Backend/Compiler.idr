@@ -356,6 +356,7 @@ compile_module heap_stack (MkModule functions) =
     let wasm_start_f = MkWasmFunction [] Nothing [] wasm_start_body (toIntNat $ length wasmFunctions) in
 
     let globals = if heap_stack then [(True, WasmValueI32 0)] else [] in
+    let memory = if heap_stack then Just 1 else Nothing in
 
     MkWasmModule
         (toList wasmFunctions ++ [wasm_start_f])
@@ -365,6 +366,7 @@ compile_module heap_stack (MkModule functions) =
             MkWasmFunctionImport "console" "log_f64" "log_f64" [WasmTypeF64] Nothing
         ]
         globals
+        memory
 
 -- export
 -- compile_module : Bool -> Module nmfns -> WasmModule

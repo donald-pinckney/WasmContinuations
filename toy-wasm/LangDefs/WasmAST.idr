@@ -107,8 +107,7 @@ record WasmModule where
     startId : Int
     func_imports : List WasmFunctionImport
     globals : List (Bool, WasmValue)
-
-    -- TODO: linear memory
+    memory : Maybe Int -- number of pages
 
 
 export

@@ -123,12 +123,17 @@ dump_global (mut, v) =
     let mut_t = if mut then "(mut " ++ t ++ ")" else t in
     "\t(global " ++ mut_t ++ " (" ++ init ++"))"
 
+dump_memory : Maybe Int -> String
+dump_memory Nothing = ""
+dump_memory (Just x) = "\t(memory " ++ show x ++ ")"
+
 export
 dump_module : WasmModule -> String
-dump_module (MkWasmModule funcs startId func_imports globals) =
+dump_module (MkWasmModule funcs startId func_imports globals memory) =
     "(module\n" ++
         (join_by (map dump_func_import func_imports) "\n") ++ "\n\n" ++
         (join_by (map dump_global globals) "\n") ++ "\n\n" ++
+        (dump_memory memory) ++ "\n\n" ++
         (join_by (map dump_function funcs) "\n") ++ "\n\n" ++
         "\t(start $f" ++ show startId ++ ")\n" ++
     ")"

@@ -4,6 +4,8 @@
 
 
 
+
+
 	(func $f0  (result f64 ) 
 		i64.const 100000000
 		call $f1
