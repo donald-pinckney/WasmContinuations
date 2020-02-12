@@ -114,16 +114,13 @@ dump_func_import (MkWasmFunctionImport exteriorNamespace exteriorName interiorNa
                             Nothing => ""
                             Just rt => " (result " ++ dump_type rt ++ " )"
     in
-    "\t(import \"" ++ exteriorNamespace ++ "\" \"" ++ exteriorName ++ "\" (func $" ++ show interiorName ++ " " ++ paramsString ++ retString ++ "))"
+    "\t(import \"" ++ exteriorNamespace ++ "\" \"" ++ exteriorName ++ "\" (func $" ++ interiorName ++ " " ++ paramsString ++ retString ++ "))"
 
 export
 dump_module : WasmModule -> String
 dump_module (MkWasmModule funcs startId func_imports) =
     "(module\n" ++
-        "\t(import \"console\" \"log_i32\" (func $log_i32 (param i32)))\n" ++
-        "\t(import \"console\" \"log_f64\" (func $log_f64 (param f64)))\n" ++
-        (join_by (map dump_func_import func_imports) "\n") ++ "\n" ++
-        (join_by (map dump_function funcs) "\n") ++ "\n" ++
-        "\t(func $start\n\t\tcall $f" ++ show startId ++ "\n\t)\n" ++
-        "\t(start $start)\n" ++
+        (join_by (map dump_func_import func_imports) "\n") ++ "\n\n" ++
+        (join_by (map dump_function funcs) "\n") ++ "\n\n" ++
+        "\t(start $f" ++ show startId ++ ")\n" ++
     ")"

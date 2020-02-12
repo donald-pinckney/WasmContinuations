@@ -1,6 +1,7 @@
 (module
 	(import "console" "log_i32" (func $log_i32 (param i32)))
 	(import "console" "log_f64" (func $log_f64 (param f64)))
+
 	(func $f0  (result f64 ) 
 		i64.const 100000000
 		call $f1
@@ -55,9 +56,10 @@
 		f64.add
 		f64.div
 	)
-	(func $start
+	(func $f3  
 		call $f0
 		call $log_f64
 	)
-	(start $start)
+
+	(start $f3)
 )

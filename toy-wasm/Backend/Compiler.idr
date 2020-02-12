@@ -109,8 +109,9 @@ mutual
     compile_expr heap_stack fn_defs fn_idx numBound (ExprVar var) =
         let local_id = (numBound - (toIntNat $ finToNat var) - 1) in
         if heap_stack then
+            let param_types = argumentTypes (index fn_idx fn_defs) in
             let locals = lift_function_locals (index fn_idx fn_defs) in
-            let Just (toy_local ** not_unit) = index' (toNat local_id) locals
+            let Just (toy_local ** not_unit) = index' (toNat local_id) (param_types ++ locals)
                 | Nothing => assert_unreachable -- hack, but ok for now.
             in
             let wasm_local_type = compile_type toy_local not_unit in
@@ -132,8 +133,9 @@ mutual
         let (a_instrs, numBound'') = compile_expr heap_stack fn_defs fn_idx numBound' after in
         let localSlot = numBound' - (toIntNat $ finToNat var) - 1 in
         if heap_stack then
+            let param_types = argumentTypes (index fn_idx fn_defs) in
             let locals = lift_function_locals (index fn_idx fn_defs) in
-            let Just (toy_local ** not_unit) = index' (toNat localSlot) locals
+            let Just (toy_local ** not_unit) = index' (toNat localSlot) (param_types ++ locals)
                 | Nothing => assert_unreachable -- hack, but ok for now.
             in
             let wasm_local_type = compile_type toy_local not_unit in
