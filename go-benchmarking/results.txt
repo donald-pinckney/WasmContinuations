@@ -1,0 +1,51 @@
+100000000 for pi, 1 thread, forced rescheduling:
+go: 8949225308 / 8.95 real
+go wasm (node): 122741754624 / 123.641 real
+hand wasm + continutations (wasmtime): ? / 4.88 real
+
+
+100000000 for pi, 100000 threads, forced rescheduling:
+go: 36091544379 / 36.11 real
+go wasm (node): 151675309312 / 152.376 real
+hand wasm + continutations (wasmtime): ? / 5.76 real
+
+
+100000000 terms for pi_no_thread_*:
+go: 489331235 / 0.49 real
+go wasm (node): 1162451456 / 2.023 real
+c: 2525762000 / 2.52 real
+c -O3 : 478077000 / 0.48 real
+c wasm (node): 1677256341 / 1.739 real
+c wasm -O3 (node): 485097469 / 0.544 real
+toyc -O (node): ? / 0.57 real
+hand wasm (wasmtime): ? / 1.25 real  	(probably slower because of memory read/writes)
+
+
+
+
+
+10000000 terms for hailstone_*:
+go: 2669585247 / 2.67 real 
+go wasm: 8108410880 / 8.69 real
+c: 6126027999 / 6.12 real
+c -O3: 2223056000 / 2.22 real
+c wasm: 6251565058 / 6.31 real
+c wasm -O3: 3598176475 / 3.65 real
+js: 16059307326 / 16.10 real
+
+
+10000000 terms for hailstone_rec_*:
+go: 10300430110 / 10.30 real
+go wasm: 24515510016 / 25.11 real
+c: 11407172999 / 11.40 real
+c -O3: 8057140000 / 8.05 real
+c wasm: 19324044706 / 19.38 real 
+c wasm -O3: 9729585163 / 9.78 real
+js: 28640754546 /  28.72 real
+
+
+
+TODO:
+- write benchmarks by hand in wasm for threading
+- 
+
