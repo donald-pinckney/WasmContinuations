@@ -146,4 +146,4 @@ optimize_function (MkWasmFunction paramTypes resultType localTypes body id) = Mk
 
 export
 optimize_module : WasmModule -> WasmModule
-optimize_module (MkWasmModule funcs start start_type) = MkWasmModule (map optimize_function funcs) start start_type
+optimize_module (MkWasmModule funcs startId imports) = MkWasmModule (map optimize_function funcs) startId imports

@@ -303,9 +303,34 @@ export
 compile_module : Bool -> Module nmfns -> WasmModule
 compile_module heap_stack (MkModule functions) =
     let main_f = head functions in
+    let main_ret_type = opt_compile_type $ returnType main_f in
     let wasmFunctions = map_enum (compile_function heap_stack functions) functions in
-    MkWasmModule (toList wasmFunctions) 0 (opt_compile_type $ returnType main_f)
 
+    let wasm_start_body = if heap_stack then
+        ?opuwerwerwe
+    else
+        case main_ret_type of
+            (Just st) =>
+                let cast_instrs = if st == WasmTypeI64 then [WasmInstrWrapI64ToI32] else [] in
+                let log_f_name = if st == WasmTypeF64 then "log_f64" else "log_i32" in
+                [
+                    WasmInstrCall 0
+                ] ++
+                cast_instrs ++
+                [
+                    WasmInstrCallSpecial log_f_name
+                ]
+            Nothing => [WasmInstrCall 0]
+    in
+    let wasm_start_f = MkWasmFunction [] Nothing [] wasm_start_body (toIntNat $ length wasmFunctions) in
+
+    MkWasmModule
+        (toList wasmFunctions ++ [wasm_start_f])
+        (toIntNat $ length wasmFunctions)
+        [
+            MkWasmFunctionImport "console" "log_i32" "log_i32" [WasmTypeI32] Nothing,
+            MkWasmFunctionImport "console" "log_f64" "log_f64" [WasmTypeF64] Nothing
+        ]
 
 -- export
 -- compile_module : Bool -> Module nmfns -> WasmModule

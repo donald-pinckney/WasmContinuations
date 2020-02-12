@@ -90,6 +90,7 @@ mutual
     dump_instr tab (WasmInstrGlobalSet x) = (tab_str tab) ++ "global.set " ++ show x
     dump_instr tab WasmInstrI32Add = (tab_str tab) ++ "i32.add"
     dump_instr tab WasmInstrI32Sub = (tab_str tab) ++ "i32.sub"
+    dump_instr tab (WasmInstrCallSpecial f) = (tab_str tab) ++ "call $" ++ f
 
     dump_instrs : Nat -> List WasmInstr -> String
     dump_instrs indent xs = join_by (map (dump_instr indent) xs) "\n"
@@ -106,25 +107,23 @@ dump_function (MkWasmFunction paramTypes resultType localTypes body id) =
         dump_instrs 2 body ++
     "\n\t)"
 
+dump_func_import : WasmFunctionImport -> String
+dump_func_import (MkWasmFunctionImport exteriorNamespace exteriorName interiorName paramTypes resultType) =
+    let paramsString = join_by (map (\t => "(param " ++ dump_type t ++ ")" ) paramTypes) " " in
+    let retString = case resultType of
+                            Nothing => ""
+                            Just rt => " (result " ++ dump_type rt ++ " )"
+    in
+    "\t(import \"" ++ exteriorNamespace ++ "\" \"" ++ exteriorName ++ "\" (func $" ++ show interiorName ++ " " ++ paramsString ++ retString ++ "))"
 
 export
 dump_module : WasmModule -> String
-dump_module (MkWasmModule funcs start (Just st)) =
-    let st' = if st == WasmTypeI64 then WasmTypeI32 else st in
+dump_module (MkWasmModule funcs startId func_imports) =
     "(module\n" ++
         "\t(import \"console\" \"log_i32\" (func $log_i32 (param i32)))\n" ++
         "\t(import \"console\" \"log_f64\" (func $log_f64 (param f64)))\n" ++
-        -- "\t(import \"console\" \"log_i64\" (func $log_i64 (param i64)))\n" ++
+        (join_by (map dump_func_import func_imports) "\n") ++ "\n" ++
         (join_by (map dump_function funcs) "\n") ++ "\n" ++
-        "\t(func $start\n\t\tcall $f" ++ show start ++ "\n\t\t" ++ (if st == WasmTypeI64 then "i32.wrap_i64\n\t\t" else "") ++ "call $log_" ++ dump_type st' ++ "\n\t)\n" ++
-        "\t(start $start)\n" ++
-    ")"
-dump_module (MkWasmModule funcs start Nothing) =
-    "(module\n" ++
-        "\t(import \"console\" \"log_i32\" (func $log_i32 (param i32)))\n" ++
-        "\t(import \"console\" \"log_f64\" (func $log_f64 (param f64)))\n" ++
-        -- "\t(import \"console\" \"log_i64\" (func $log_i64 (param i64)))\n" ++
-        (join_by (map dump_function funcs) "\n") ++ "\n" ++
-        "\t(func $start\n\t\tcall $f" ++ show start ++ "\n\t)\n" ++
+        "\t(func $start\n\t\tcall $f" ++ show startId ++ "\n\t)\n" ++
         "\t(start $start)\n" ++
     ")"

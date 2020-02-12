@@ -76,6 +76,8 @@ data WasmInstr' v local func label t offset global = WasmInstrConst v
                 | WasmInstrI32Add
                 | WasmInstrI32Sub
 
+                | WasmInstrCallSpecial String
+
 public export
 WasmInstr : Type
 WasmInstr = WasmInstr' WasmValue Int Int Int WasmType Int Int
@@ -90,11 +92,21 @@ record WasmFunction where
     id : Int
 
 public export
+record WasmFunctionImport where
+    constructor MkWasmFunctionImport
+    exteriorNamespace : String
+    exteriorName : String
+    interiorName : String
+    paramTypes : List WasmType
+    resultType : Maybe WasmType
+
+public export
 record WasmModule where
     constructor MkWasmModule
     funcs : List WasmFunction
-    start : Int
-    start_type : Maybe WasmType
+    startId : Int
+    func_imports : List WasmFunctionImport
+
     -- TODO: linear memory
 
 
@@ -188,9 +200,6 @@ implementation Eq WasmInstr where
     WasmInstrI32Add == WasmInstrI32Add = True
     WasmInstrI32Sub == WasmInstrI32Sub = True
 
--- | WasmInstrLoad t offset
--- | WasmInstrStore t offset
--- | WasmInstrGlobalGet global
--- | WasmInstrGlobalSet global
+    (WasmInstrCallSpecial x) == (WasmInstrCallSpecial y) = x == y
 
     _ == _ = False
