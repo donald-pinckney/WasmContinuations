@@ -1,6 +1,7 @@
 module Utils
 
 import Data.Vect
+import Data.Fin
 
 %default covering
 
@@ -37,6 +38,20 @@ namespace vect
         x' <- f x
         xs' <- mapExcept f xs
         pure (x' :: xs')
+
+namespace list
+    export
+    map_enum : Int -> (Int -> a -> b) -> List a -> List b
+    map_enum acc f [] = []
+    map_enum acc f (x :: xs) = f acc x :: map_enum (acc + 1) f xs
+
+
+
+namespace vect
+    export
+    map_enum : (Fin n -> a -> b) -> Vect n a -> Vect n b
+    map_enum f xs = map (uncurry f) (zip range xs)
+
 
 export
 allUnique : Eq a => List a -> Bool

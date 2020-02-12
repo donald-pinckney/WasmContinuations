@@ -69,15 +69,12 @@ data WasmInstr' v local func label t offset global = WasmInstrConst v
                 | WasmInstrF64ConvertI64_s
                 | WasmInstrF64Neq
 
-                | WasmInstrI64Load offset
-                | WasmInstrI32Load offset
-                | WasmInstrF64Load offset
-                | WasmInstrI64Store offset
-                | WasmInstrI32Store offset
-                | WasmInstrF64Store offset
+                | WasmInstrLoad t offset
+                | WasmInstrStore t offset
                 | WasmInstrGlobalGet global
                 | WasmInstrGlobalSet global
-
+                | WasmInstrI32Add
+                | WasmInstrI32Sub
 
 public export
 WasmInstr : Type
@@ -182,5 +179,18 @@ implementation Eq WasmInstr where
     WasmInstrF64ConvertI32_s == WasmInstrF64ConvertI32_s = True
     WasmInstrF64ConvertI64_s == WasmInstrF64ConvertI64_s = True
     WasmInstrF64Neq == WasmInstrF64Neq = True
+
+    (WasmInstrLoad t1 o1) == (WasmInstrLoad t2 o2) = t1 == t2 && o1 == o2
+    (WasmInstrStore t1 o1) == (WasmInstrStore t2 o2) = t1 == t2 && o1 == o2
+    (WasmInstrGlobalGet g1) == (WasmInstrGlobalGet g2) = g1 == g2
+    (WasmInstrGlobalSet g1) == (WasmInstrGlobalSet g2) = g1 == g2
+
+    WasmInstrI32Add == WasmInstrI32Add = True
+    WasmInstrI32Sub == WasmInstrI32Sub = True
+
+-- | WasmInstrLoad t offset
+-- | WasmInstrStore t offset
+-- | WasmInstrGlobalGet global
+-- | WasmInstrGlobalSet global
 
     _ == _ = False

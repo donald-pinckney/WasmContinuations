@@ -9,10 +9,6 @@ join_by [] j = ""
 join_by [x] j = x
 join_by (x :: xs) j = x ++ j ++ (join_by xs j)
 
-map_enum : Int -> (Int -> a -> b) -> List a -> List b
-map_enum acc f [] = []
-map_enum acc f (x :: xs) = f acc x :: map_enum (acc + 1) f xs
-
 dump_type : WasmType -> String
 dump_type WasmTypeI64 = "i64"
 dump_type WasmTypeF64 = "f64"
@@ -88,14 +84,12 @@ mutual
     dump_instr tab WasmInstrF64ConvertI32_s = (tab_str tab) ++ "f64.convert_i32_s"
     dump_instr tab WasmInstrF64ConvertI64_s = (tab_str tab) ++ "f64.convert_i64_s"
     dump_instr tab WasmInstrF64Neq = (tab_str tab) ++ "f64.ne"
-    dump_instr tab (WasmInstrI64Load x) = (tab_str tab) ++ "i64.load offset=" ++ show x
-    dump_instr tab (WasmInstrI32Load x) = (tab_str tab) ++ "i32.load offset=" ++ show x
-    dump_instr tab (WasmInstrF64Load x) = (tab_str tab) ++ "f64.load offset=" ++ show x
-    dump_instr tab (WasmInstrI64Store x) = (tab_str tab) ++ "i64.store offset=" ++ show x
-    dump_instr tab (WasmInstrI32Store x) = (tab_str tab) ++ "i32.store offset=" ++ show x
-    dump_instr tab (WasmInstrF64Store x) = (tab_str tab) ++ "f64.store offset=" ++ show x
+    dump_instr tab (WasmInstrLoad t x) = (tab_str tab) ++ dump_type t ++ ".load offset=" ++ show x
+    dump_instr tab (WasmInstrStore t x) = (tab_str tab) ++ dump_type t ++ ".store offset=" ++ show x
     dump_instr tab (WasmInstrGlobalGet x) = (tab_str tab) ++ "global.get " ++ show x
     dump_instr tab (WasmInstrGlobalSet x) = (tab_str tab) ++ "global.set " ++ show x
+    dump_instr tab WasmInstrI32Add = (tab_str tab) ++ "i32.add"
+    dump_instr tab WasmInstrI32Sub = (tab_str tab) ++ "i32.sub"
 
     dump_instrs : Nat -> List WasmInstr -> String
     dump_instrs indent xs = join_by (map (dump_instr indent) xs) "\n"

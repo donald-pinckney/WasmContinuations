@@ -4,14 +4,12 @@ import LangDefs.ToyAST
 import LangDefs.WasmAST
 import Backend.Optimizer
 
+import Utils
+
 import Data.Vect
 import Data.Fin
 
 %default covering
-
-map_enum : Int -> (Int -> a -> b) -> List a -> List b
-map_enum acc f [] = []
-map_enum acc f (x :: xs) = f acc x :: map_enum (acc + 1) f xs
 
 valueToWasmValue : (v : Value) -> Not (typeOfValue v = TypeUnit) -> WasmValue
 valueToWasmValue (ValueInt x) prf = WasmValueI64 x
@@ -84,6 +82,10 @@ lift_local_decls (ExprINeg x) = lift_local_decls x
 lift_local_decls (ExprFNeg x) = lift_local_decls x
 lift_local_decls (ExprCast x t to_t) = lift_local_decls x
 
+lift_function_locals : FuncDef fns -> List (t : Type' ** Not (t = TypeUnit))
+lift_function_locals (MkFuncDef returnType argumentTypes body) = lift_local_decls body
+
+
 is_small_int_expr : Expr d fns -> Bool
 is_small_int_expr (ExprValue (ValueInt x)) = is_small_int x
 is_small_int_expr e = False
@@ -93,60 +95,95 @@ is_small_float_expr (ExprValue (ValueFloat x)) = is_small_float x
 is_small_float_expr e = False
 
 mutual
-    compile_binop : (heap_stack : Bool) -> Vect fns (List (t : Type' ** Not (t = TypeUnit))) -> Int -> (x : Expr d fns) -> (y : Expr d fns) -> WasmInstr -> (List WasmInstr, Int)
-    compile_binop heap_stack fn_locals numBound x y op =
-        let (xins, numBound') = compile_expr heap_stack fn_locals numBound x in
-        let (yins, numBound'') = compile_expr heap_stack fn_locals numBound' y in
+    compile_binop : (heap_stack : Bool) -> Vect fns (FuncDef fns) -> Fin fns -> Int -> (x : Expr d fns) -> (y : Expr d fns) -> WasmInstr -> (List WasmInstr, Int)
+    compile_binop heap_stack fn_defs fn_idx numBound x y op =
+        let (xins, numBound') = compile_expr heap_stack fn_defs fn_idx numBound x in
+        let (yins, numBound'') = compile_expr heap_stack fn_defs fn_idx numBound' y in
         (xins ++ yins ++ [op], numBound'')
 
-    compile_expr : (heap_stack : Bool) -> Vect fns (List (t : Type' ** Not (t = TypeUnit))) -> Int -> Expr d fns -> (List WasmInstr, Int)
-    compile_expr heap_stack fn_locals numBound (ExprValue x) = case eq_unit (typeOfValue x) of
+    compile_expr : (heap_stack : Bool) -> Vect fns (FuncDef fns) -> Fin fns -> Int -> Expr d fns -> (List WasmInstr, Int)
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprValue x) = case eq_unit (typeOfValue x) of
         (Yes prf) => ([], numBound)
         (No contra) => ([WasmInstrConst (valueToWasmValue x contra)], numBound)
 
-    compile_expr heap_stack fn_locals numBound (ExprVar var) =
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprVar var) =
+        let local_id = (numBound - (toIntNat $ finToNat var) - 1) in
         if heap_stack then
-            ?read_var
+            let locals = lift_function_locals (index fn_idx fn_defs) in
+            let Just (toy_local ** not_unit) = index' (toNat local_id) locals
+                | Nothing => assert_unreachable -- hack, but ok for now.
+            in
+            let wasm_local_type = compile_type toy_local not_unit in
+            ([WasmInstrLocalGet 0, WasmInstrLoad wasm_local_type (8*local_id)], numBound)
         else
-            ([WasmInstrLocalGet (numBound - (toIntNat $ finToNat var) - 1)], numBound)
+            ([WasmInstrLocalGet local_id], numBound)
 
-    compile_expr heap_stack fn_locals numBound (ExprDeclareVar t not_unit initExpr after) =
-        let (i_instrs, numBound') = compile_expr heap_stack fn_locals numBound initExpr in
-        let (a_instrs, numBound'') = compile_expr heap_stack fn_locals (1 + numBound') after in
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprDeclareVar t not_unit initExpr after) =
+        let (i_instrs, numBound') = compile_expr heap_stack fn_defs fn_idx numBound initExpr in
+        let (a_instrs, numBound'') = compile_expr heap_stack fn_defs fn_idx (1 + numBound') after in
         if heap_stack then
-            ?declare_var
+            let wasm_local_type = compile_type t not_unit in
+            ([WasmInstrLocalGet 0] ++ i_instrs ++ [WasmInstrStore wasm_local_type (8*numBound')] ++ a_instrs, numBound'')
         else
             (i_instrs ++ (WasmInstrLocalSet numBound' :: a_instrs), numBound'')
 
-    compile_expr heap_stack fn_locals numBound (ExprUpdateVar var newExpr after) =
-        let (n_instrs, numBound') = compile_expr heap_stack fn_locals numBound newExpr in
-        let (a_instrs, numBound'') = compile_expr heap_stack fn_locals numBound' after in
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprUpdateVar var newExpr after) =
+        let (n_instrs, numBound') = compile_expr heap_stack fn_defs fn_idx numBound newExpr in
+        let (a_instrs, numBound'') = compile_expr heap_stack fn_defs fn_idx numBound' after in
         let localSlot = numBound' - (toIntNat $ finToNat var) - 1 in
         if heap_stack then
-            ?update_var
+            let locals = lift_function_locals (index fn_idx fn_defs) in
+            let Just (toy_local ** not_unit) = index' (toNat localSlot) locals
+                | Nothing => assert_unreachable -- hack, but ok for now.
+            in
+            let wasm_local_type = compile_type toy_local not_unit in
+            ([WasmInstrLocalGet 0] ++ n_instrs ++ [WasmInstrStore wasm_local_type (8*localSlot)] ++ a_instrs, numBound'')
         else
             (n_instrs ++ (WasmInstrLocalSet localSlot :: a_instrs), numBound'')
 
-    compile_expr heap_stack fn_locals numBound (ExprCall f args) =
-        let (args_ins, numBound') = foldl (\(instrs,b),arg =>
-                                            let (ins, b') = compile_expr heap_stack fn_locals b arg in
-                                            (ins ++ instrs, b')
-                                    ) (the (List WasmInstr) [], numBound) args in
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprCall f args) =
+        let f_def = index f fn_defs in
+        let arg_types = argumentTypes f_def in
+        let num_args = toIntNat (length args) in
+        let num_locals = toIntNat (length (lift_function_locals f_def)) in
+        let (args_ins, numBound', _) = foldl (\(instrs,b,i),(arg, (at ** not_unit)) =>
+                                            let (ins, b') = compile_expr heap_stack fn_defs fn_idx b arg in
+                                            if heap_stack then
+                                                let wasm_at = compile_type at not_unit in
+                                                ([
+                                                    WasmInstrLocalGet 0,
+                                                    WasmInstrConst (WasmValueI32 (8*(num_args + num_locals))),
+                                                    WasmInstrI32Sub
+                                                ] ++ ins ++ [WasmInstrStore wasm_at (8*i)] ++ instrs, b',i+1)
+                                            else
+                                                (ins ++ instrs, b',i+1)
+                                    ) (the (List WasmInstr) [], numBound, the Int 0) (zip args arg_types) in
         if heap_stack then
-            ?do_call
+            (
+                args_ins ++
+                [
+                    WasmInstrLocalGet 0,
+                    WasmInstrConst (WasmValueI32 (8*(num_args + num_locals))),
+                    WasmInstrI32Sub,
+                    WasmInstrGlobalSet 0
+                ] ++
+                [
+                    WasmInstrCall (toIntNat $ finToNat f),
+                    WasmInstrGlobalGet 0
+                ], numBound')
         else
             (args_ins ++ [WasmInstrCall (toIntNat $ finToNat f)], numBound')
 
-    compile_expr heap_stack fn_locals numBound (ExprIf cond t true false) =
-        let (cond_ins, numBound') = compile_expr heap_stack fn_locals numBound cond in
-        let (true_ins, numBound'') = compile_expr heap_stack fn_locals numBound' true in
-        let (false_ins, numBound''') = compile_expr heap_stack fn_locals numBound'' false in
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprIf cond t true false) =
+        let (cond_ins, numBound') = compile_expr heap_stack fn_defs fn_idx numBound cond in
+        let (true_ins, numBound'') = compile_expr heap_stack fn_defs fn_idx numBound' true in
+        let (false_ins, numBound''') = compile_expr heap_stack fn_defs fn_idx numBound'' false in
         (cond_ins ++ [WasmInstrIf (opt_compile_type t) true_ins false_ins], numBound''')
 
-    compile_expr heap_stack fn_locals numBound (ExprWhile cond body after) =
-        let (cond_ins, numBound') = compile_expr heap_stack fn_locals numBound cond in
-        let (body_ins, numBound'') = compile_expr heap_stack fn_locals numBound' body in
-        let (after_ins, numBound''') = compile_expr heap_stack fn_locals numBound'' after in
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprWhile cond body after) =
+        let (cond_ins, numBound') = compile_expr heap_stack fn_defs fn_idx numBound cond in
+        let (body_ins, numBound'') = compile_expr heap_stack fn_defs fn_idx numBound' body in
+        let (after_ins, numBound''') = compile_expr heap_stack fn_defs fn_idx numBound'' after in
         (WasmInstrBlock Nothing (
             cond_ins ++ [WasmInstrI32Eqz, WasmInstrBrIf 0] ++
             [WasmInstrLoop Nothing (
@@ -154,59 +191,57 @@ mutual
             )]
         ) :: after_ins, numBound''')
 
-    compile_expr heap_stack fn_locals numBound (ExprIAdd x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrI64Add
-    compile_expr heap_stack fn_locals numBound (ExprFAdd x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrF64Add
-    compile_expr heap_stack fn_locals numBound (ExprISub x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrI64Sub
-    compile_expr heap_stack fn_locals numBound (ExprFSub x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrF64Sub
-    compile_expr heap_stack fn_locals numBound (ExprINeg x) =
-        let (xins, numBound') = compile_expr heap_stack fn_locals numBound x in
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprIAdd x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrI64Add
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprFAdd x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrF64Add
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprISub x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrI64Sub
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprFSub x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrF64Sub
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprINeg x) =
+        let (xins, numBound') = compile_expr heap_stack fn_defs fn_idx numBound x in
         ([WasmInstrConst (WasmValueI64 0)] ++ xins ++ [WasmInstrI64Sub], numBound')
-    compile_expr heap_stack fn_locals numBound (ExprFNeg x) =
-        let (xins, numBound') = compile_expr heap_stack fn_locals numBound x in
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprFNeg x) =
+        let (xins, numBound') = compile_expr heap_stack fn_defs fn_idx numBound x in
         (xins ++ [WasmInstrF64Neg], numBound')
-    compile_expr heap_stack fn_locals numBound (ExprIMul x_tmp y_tmp) =
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprIMul x_tmp y_tmp) =
         if is_small_int_expr x_tmp
-            then let (xins, numBound') = compile_expr heap_stack fn_locals numBound x_tmp in
-                 let (yins, numBound'') = compile_expr heap_stack fn_locals numBound' y_tmp in
+            then let (xins, numBound') = compile_expr heap_stack fn_defs fn_idx numBound x_tmp in
+                 let (yins, numBound'') = compile_expr heap_stack fn_defs fn_idx numBound' y_tmp in
                  (yins ++ xins ++ [WasmInstrI64Mul], numBound'')
-            else let (xins, numBound') = compile_expr heap_stack fn_locals numBound x_tmp in
-                 let (yins, numBound'') = compile_expr heap_stack fn_locals numBound' y_tmp in
+            else let (xins, numBound') = compile_expr heap_stack fn_defs fn_idx numBound x_tmp in
+                 let (yins, numBound'') = compile_expr heap_stack fn_defs fn_idx numBound' y_tmp in
                  (xins ++ yins ++ [WasmInstrI64Mul], numBound'')
-    compile_expr heap_stack fn_locals numBound (ExprFMul x_tmp y_tmp) =
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprFMul x_tmp y_tmp) =
         if is_small_float_expr x_tmp
-            then let (xins, numBound') = compile_expr heap_stack fn_locals numBound x_tmp in
-                 let (yins, numBound'') = compile_expr heap_stack fn_locals numBound' y_tmp in
+            then let (xins, numBound') = compile_expr heap_stack fn_defs fn_idx numBound x_tmp in
+                 let (yins, numBound'') = compile_expr heap_stack fn_defs fn_idx numBound' y_tmp in
                  (yins ++ xins ++ [WasmInstrF64Mul], numBound'')
-            else let (xins, numBound') = compile_expr heap_stack fn_locals numBound x_tmp in
-                 let (yins, numBound'') = compile_expr heap_stack fn_locals numBound' y_tmp in
+            else let (xins, numBound') = compile_expr heap_stack fn_defs fn_idx numBound x_tmp in
+                 let (yins, numBound'') = compile_expr heap_stack fn_defs fn_idx numBound' y_tmp in
                  (xins ++ yins ++ [WasmInstrF64Mul], numBound'')
-    compile_expr heap_stack fn_locals numBound (ExprIDiv x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrI64Div_s
-    compile_expr heap_stack fn_locals numBound (ExprFDiv x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrF64Div
-    compile_expr heap_stack fn_locals numBound (ExprIMod x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrI64Rem_s
-    compile_expr heap_stack fn_locals numBound (ExprIGT x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrI64Gt_s
-    compile_expr heap_stack fn_locals numBound (ExprFGT x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrF64Gt
-    compile_expr heap_stack fn_locals numBound (ExprIGTE x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrI64Ge_s
-    compile_expr heap_stack fn_locals numBound (ExprFGTE x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrF64Ge
-    compile_expr heap_stack fn_locals numBound (ExprIEQ x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrI64Eq
-    compile_expr heap_stack fn_locals numBound (ExprFEQ x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrF64Eq
-    compile_expr heap_stack fn_locals numBound (ExprILTE x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrI64Le_s
-    compile_expr heap_stack fn_locals numBound (ExprFLTE x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrF64Le
-    compile_expr heap_stack fn_locals numBound (ExprILT x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrI64Lt_s
-    compile_expr heap_stack fn_locals numBound (ExprFLT x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrF64Lt
-    compile_expr heap_stack fn_locals numBound (ExprAnd x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrI32And
-    compile_expr heap_stack fn_locals numBound (ExprOr x y) = compile_binop heap_stack fn_locals numBound x y WasmInstrI32Or
-    compile_expr heap_stack fn_locals numBound (ExprNot x) =
-        let (xins, numBound') = compile_expr heap_stack fn_locals numBound x in
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprIDiv x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrI64Div_s
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprFDiv x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrF64Div
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprIMod x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrI64Rem_s
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprIGT x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrI64Gt_s
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprFGT x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrF64Gt
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprIGTE x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrI64Ge_s
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprFGTE x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrF64Ge
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprIEQ x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrI64Eq
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprFEQ x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrF64Eq
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprILTE x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrI64Le_s
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprFLTE x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrF64Le
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprILT x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrI64Lt_s
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprFLT x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrF64Lt
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprAnd x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrI32And
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprOr x y) = compile_binop heap_stack fn_defs fn_idx numBound x y WasmInstrI32Or
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprNot x) =
+        let (xins, numBound') = compile_expr heap_stack fn_defs fn_idx numBound x in
         (xins ++ [WasmInstrI32Eqz], numBound')
-    compile_expr heap_stack fn_locals numBound (ExprCast x t to_t) =
-        let (xins, numBound') = compile_expr heap_stack fn_locals numBound x in
+    compile_expr heap_stack fn_defs fn_idx numBound (ExprCast x t to_t) =
+        let (xins, numBound') = compile_expr heap_stack fn_defs fn_idx numBound x in
         (xins ++ cast_instrs t to_t, numBound')
 
-lift_function_locals : FuncDef fns -> List (t : Type' ** Not (t = TypeUnit))
-lift_function_locals (MkFuncDef returnType argumentTypes body) = lift_local_decls body
 
-compile_function : (heap_stack : Bool) -> Vect fns (List (t : Type' ** Not (t = TypeUnit))) -> Int -> FuncDef fns -> WasmFunction
-compile_function False fn_locals id (MkFuncDef returnType argumentTypes body) =
+compile_function : (heap_stack : Bool) -> Vect fns (FuncDef fns) -> Fin fns -> FuncDef fns -> WasmFunction
+compile_function False fn_defs id (MkFuncDef returnType argumentTypes body) =
     let param_types = map (\(at ** not_unit) => compile_type at not_unit) argumentTypes in
     let ret_type = opt_compile_type returnType in
     let local_types = map (\(at ** not_unit) => compile_type at not_unit) (lift_local_decls body) in
@@ -214,8 +249,8 @@ compile_function False fn_locals id (MkFuncDef returnType argumentTypes body) =
         param_types
         ret_type
         local_types
-        (fst (compile_expr False fn_locals (toIntNat (length argumentTypes)) body))
-        id
+        (fst (compile_expr False fn_defs id (toIntNat (length argumentTypes)) body))
+        (toIntNat $ finToNat id)
 
 {-
     Calling convention:
@@ -223,7 +258,7 @@ compile_function False fn_locals id (MkFuncDef returnType argumentTypes body) =
             - arguments must have been pushed onto the stack,
             - and space for locals pushed onto stack. Stack looks like:
             | ...  |
-            | ...  |
+            | ...  | <- old SP, stored in local 0
             | loc2 |
             | loc1 |
             | arg3 |
@@ -233,23 +268,43 @@ compile_function False fn_locals id (MkFuncDef returnType argumentTypes body) =
 
         - Then, prologue for function $f must move SP, stored in WASM GLOBAL 0 to WASM LOCAL 0
 
+        - Then, epilogue for function $f must pop the stack, storing popped SP back in WASM GLOBAL 0.
+
+        - The return value of function $f is returned in Wasm as normal, not on the heap stack
+
 -}
-compile_function True fn_locals id (MkFuncDef returnType argumentTypes body) =
-    -- ?opuwerwe
+compile_function True fn_defs id f_def@(MkFuncDef returnType argumentTypes body) =
+    let prologue = [
+        WasmInstrGlobalGet 0,
+        WasmInstrLocalSet 0
+    ] in
+    let num_args = toIntNat (length argumentTypes) in
+    let num_locals = toIntNat (length (lift_function_locals f_def)) in
+    let epilogue = [
+        WasmInstrLocalGet 0,
+        WasmInstrConst (WasmValueI32 (8*(num_args + num_locals))),
+        WasmInstrI32Add,
+        WasmInstrLocalTee 0,
+        WasmInstrGlobalSet 0
+    ] in
     MkWasmFunction
         [] -- no parameters
         Nothing -- no return type
         [WasmTypeI32] -- one local: sp
-        ([WasmInstrGlobalGet 0, WasmInstrLocalSet 0] ++ fst (compile_expr True fn_locals (toIntNat (length argumentTypes)) body))
-        id
+        (
+            prologue ++
+            fst (compile_expr True fn_defs id (toIntNat (length argumentTypes)) body) ++
+            epilogue
+        )
+        (toIntNat $ finToNat id)
+
 
 export
 compile_module : Bool -> Module nmfns -> WasmModule
 compile_module heap_stack (MkModule functions) =
-    let fn_locals = map lift_function_locals functions in
     let main_f = head functions in
-    let wasmFunctions = map_enum 0 (compile_function heap_stack fn_locals) (toList functions) in
-    MkWasmModule wasmFunctions 0 (opt_compile_type $ returnType main_f)
+    let wasmFunctions = map_enum (compile_function heap_stack functions) functions in
+    MkWasmModule (toList wasmFunctions) 0 (opt_compile_type $ returnType main_f)
 
 
 -- export
