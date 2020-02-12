@@ -116,11 +116,19 @@ dump_func_import (MkWasmFunctionImport exteriorNamespace exteriorName interiorNa
     in
     "\t(import \"" ++ exteriorNamespace ++ "\" \"" ++ exteriorName ++ "\" (func $" ++ interiorName ++ " " ++ paramsString ++ retString ++ "))"
 
+dump_global : (Bool, WasmValue) -> String
+dump_global (mut, v) =
+    let t = dump_type (wasmTypeOfWasmValue v) in
+    let init = dump_instr 0 (WasmInstrConst v) in
+    let mut_t = if mut then "(mut " ++ t ++ ")" else t in
+    "\t(global " ++ mut_t ++ " (" ++ init ++"))"
+
 export
 dump_module : WasmModule -> String
-dump_module (MkWasmModule funcs startId func_imports) =
+dump_module (MkWasmModule funcs startId func_imports globals) =
     "(module\n" ++
         (join_by (map dump_func_import func_imports) "\n") ++ "\n\n" ++
+        (join_by (map dump_global globals) "\n") ++ "\n\n" ++
         (join_by (map dump_function funcs) "\n") ++ "\n\n" ++
         "\t(start $f" ++ show startId ++ ")\n" ++
     ")"

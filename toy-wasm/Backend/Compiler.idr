@@ -161,18 +161,26 @@ mutual
                                                 (ins ++ instrs, b',i+1)
                                     ) (the (List WasmInstr) [], numBound, the Int 0) (zip args arg_types) in
         if heap_stack then
+            let read_ret =
+            (
+                case returnType f_def of
+                    TypeInt => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, WasmInstrLoad WasmTypeI64 0]
+                    TypeDouble => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, WasmInstrLoad WasmTypeF64 0]
+                    TypeBool => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, WasmInstrLoad WasmTypeI32 0]
+                    TypeUnit => [WasmInstrDrop]
+            ) in
+
             (
                 args_ins ++
                 [
                     WasmInstrLocalGet 0,
                     WasmInstrConst (WasmValueI32 (8*(num_args + num_locals))),
                     WasmInstrI32Sub,
-                    WasmInstrGlobalSet 0
-                ] ++
-                [
+                    WasmInstrGlobalSet 0,
                     WasmInstrCall (toIntNat $ finToNat f),
-                    WasmInstrGlobalGet 0
-                ], numBound')
+                    WasmInstrGlobalGet 0,
+                    WasmInstrLocalTee 0
+                ] ++ read_ret, numBound')
         else
             (args_ins ++ [WasmInstrCall (toIntNat $ finToNat f)], numBound')
 
@@ -270,18 +278,22 @@ compile_function False fn_defs id (MkFuncDef returnType argumentTypes body) =
 
         - Then, prologue for function $f must move SP, stored in WASM GLOBAL 0 to WASM LOCAL 0
 
-        - Then, epilogue for function $f must pop the stack, storing popped SP back in WASM GLOBAL 0.
+        - Then, epilogue for function $f must pop the stack and write return value to stack, storing popped SP back in WASM GLOBAL 0.
 
-        - The return value of function $f is returned in Wasm as normal, not on the heap stack
+        - Finally, the caller function must read the return value from just below the SP
 
 -}
 compile_function True fn_defs id f_def@(MkFuncDef returnType argumentTypes body) =
-    let prologue = [
-        WasmInstrGlobalGet 0,
-        WasmInstrLocalSet 0
-    ] in
     let num_args = toIntNat (length argumentTypes) in
     let num_locals = toIntNat (length (lift_function_locals f_def)) in
+
+    let prologue = [
+        WasmInstrGlobalGet 0,
+        WasmInstrLocalTee 0,
+        WasmInstrConst (WasmValueI32 (8*(num_args + num_locals - 1))),
+        WasmInstrI32Sub
+    ] in
+
     let epilogue = [
         WasmInstrLocalGet 0,
         WasmInstrConst (WasmValueI32 (8*(num_args + num_locals))),
@@ -289,6 +301,14 @@ compile_function True fn_defs id f_def@(MkFuncDef returnType argumentTypes body)
         WasmInstrLocalTee 0,
         WasmInstrGlobalSet 0
     ] in
+    let epilogue_ret_val : List WasmInstr =
+    (
+        case returnType of
+            TypeInt => [WasmInstrStore WasmTypeI64 0]
+            TypeDouble => [WasmInstrStore WasmTypeF64 0]
+            TypeBool => [WasmInstrStore WasmTypeI32 0]
+            TypeUnit => [WasmInstrDrop]
+    ) in
     MkWasmFunction
         [] -- no parameters
         Nothing -- no return type
@@ -296,7 +316,7 @@ compile_function True fn_defs id f_def@(MkFuncDef returnType argumentTypes body)
         (
             prologue ++
             fst (compile_expr True fn_defs id (toIntNat (length argumentTypes)) body) ++
-            epilogue
+            epilogue ++ epilogue_ret_val
         )
         (toIntNat $ finToNat id)
 
@@ -306,25 +326,36 @@ compile_module : Bool -> Module nmfns -> WasmModule
 compile_module heap_stack (MkModule functions) =
     let main_f = head functions in
     let main_ret_type = opt_compile_type $ returnType main_f in
+    let main_locals = toIntNat (length (lift_function_locals main_f)) in
+
     let wasmFunctions = map_enum (compile_function heap_stack functions) functions in
 
+    let call_instrs = [WasmInstrCall 0] in
+    let cast_instrs : List WasmInstr = if main_ret_type == Just WasmTypeI64 then [WasmInstrWrapI64ToI32] else [] in
+    let log_name = if main_ret_type == Just WasmTypeF64 then "log_f64" else "log_i32" in
+    let log_instrs = if isJust main_ret_type then cast_instrs ++ [WasmInstrCallSpecial log_name] else [] in
+
+    let read_ret_instrs =
+    (
+        case returnType main_f of
+            TypeInt => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, WasmInstrLoad WasmTypeI64 0]
+            TypeDouble => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, WasmInstrLoad WasmTypeF64 0]
+            TypeBool => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, WasmInstrLoad WasmTypeI32 0]
+            TypeUnit => [WasmInstrDrop]
+    ) in
+
     let wasm_start_body = if heap_stack then
-        ?opuwerwerwe
+        [
+            WasmInstrConst (WasmValueI32 (1024 - 8*main_locals)),
+            WasmInstrGlobalSet 0
+        ] ++ call_instrs ++ [WasmInstrGlobalGet 0] ++ read_ret_instrs ++ log_instrs
     else
-        case main_ret_type of
-            (Just st) =>
-                let cast_instrs = if st == WasmTypeI64 then [WasmInstrWrapI64ToI32] else [] in
-                let log_f_name = if st == WasmTypeF64 then "log_f64" else "log_i32" in
-                [
-                    WasmInstrCall 0
-                ] ++
-                cast_instrs ++
-                [
-                    WasmInstrCallSpecial log_f_name
-                ]
-            Nothing => [WasmInstrCall 0]
+        call_instrs ++ log_instrs
     in
+
     let wasm_start_f = MkWasmFunction [] Nothing [] wasm_start_body (toIntNat $ length wasmFunctions) in
+
+    let globals = if heap_stack then [(True, WasmValueI32 0)] else [] in
 
     MkWasmModule
         (toList wasmFunctions ++ [wasm_start_f])
@@ -333,6 +364,7 @@ compile_module heap_stack (MkModule functions) =
             MkWasmFunctionImport "console" "log_i32" "log_i32" [WasmTypeI32] Nothing,
             MkWasmFunctionImport "console" "log_f64" "log_f64" [WasmTypeF64] Nothing
         ]
+        globals
 
 -- export
 -- compile_module : Bool -> Module nmfns -> WasmModule

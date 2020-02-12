@@ -106,6 +106,7 @@ record WasmModule where
     funcs : List WasmFunction
     startId : Int
     func_imports : List WasmFunctionImport
+    globals : List (Bool, WasmValue)
 
     -- TODO: linear memory
 
