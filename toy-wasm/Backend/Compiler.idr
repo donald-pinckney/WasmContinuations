@@ -152,13 +152,13 @@ mutual
                                             let (ins, b') = compile_expr heap_stack fn_defs fn_idx b arg in
                                             if heap_stack then
                                                 let wasm_at = compile_type at not_unit in
-                                                ([
+                                                (instrs ++ [
                                                     WasmInstrLocalGet 0,
                                                     WasmInstrConst (WasmValueI32 (8*(num_args + num_locals))),
                                                     WasmInstrI32Sub
-                                                ] ++ ins ++ [WasmInstrStore wasm_at (8*i)] ++ instrs, b',i+1)
+                                                ] ++ ins ++ [WasmInstrStore wasm_at (8*i)], b',i+1)
                                             else
-                                                (ins ++ instrs, b',i+1)
+                                                (instrs ++ ins, b',i+1)
                                     ) (the (List WasmInstr) [], numBound, the Int 0) (zip args arg_types) in
         if heap_stack then
             let read_ret =
@@ -291,7 +291,7 @@ compile_function True fn_defs id f_def@(MkFuncDef returnType argumentTypes body)
         WasmInstrGlobalGet 0,
         WasmInstrLocalTee 0,
         WasmInstrConst (WasmValueI32 (8*(num_args + num_locals - 1))),
-        WasmInstrI32Sub
+        WasmInstrI32Add
     ] in
 
     let epilogue = [

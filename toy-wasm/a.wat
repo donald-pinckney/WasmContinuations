@@ -18,8 +18,7 @@
 		(block
 			local.get 2
 			local.get 0
-			i64.lt_s
-			i32.eqz
+			i64.ge_s
 			br_if 0
 			(loop
 				local.get 1
@@ -31,8 +30,7 @@
 				local.get 2
 				i64.const 1
 				i64.add
-				local.set 2
-				local.get 2
+				local.tee 2
 				local.get 0
 				i64.lt_s
 				br_if 0
@@ -44,21 +42,20 @@
 		i64.const 0
 		local.get 0
 		i64.trunc_f64_s
-		i64.const 2
-		i64.rem_s
+		i64.const 1
+		i64.and
 		i64.sub
-		i64.const 2
-		i64.mul
+		i64.const 1
+		i64.shl
 		i64.const 1
 		i64.add
-		local.set 1
-		local.get 1
-		i64.const 4
-		i64.mul
+		local.tee 1
+		i64.const 2
+		i64.shl
 		f64.convert_i64_s
 		local.get 0
-		f64.const 2
-		f64.mul
+		local.get 0
+		f64.add
 		f64.const 1
 		f64.add
 		f64.div
