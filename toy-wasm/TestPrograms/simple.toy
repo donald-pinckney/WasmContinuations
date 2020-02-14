@@ -1,8 +1,0 @@
-func int main() {
-    pi(100000000, 1234)
-}
-
-func int pi(int x, int y) {
-    let int z = x + y;
-    x + y
-}
