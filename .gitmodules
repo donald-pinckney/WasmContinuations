@@ -34,3 +34,7 @@
 	path = toy-wasm
 	url = https://github.com/donald-pinckney/toy-wasm
 	branch = master
+[submodule "go-benchmarking"]
+	path = go-benchmarking
+	url = https://github.com/donald-pinckney/go-benchmarking
+	branch = master
