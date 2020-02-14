@@ -32,7 +32,7 @@
 	branch = conts
 [submodule "toy-wasm"]
 	path = toy-wasm
-	url = https://github.com/donald-pinckney/toy-wasm
+	url = https://github.com/plasma-umass/toy-wasm
 	branch = master
 [submodule "go-benchmarking"]
 	path = go-benchmarking
