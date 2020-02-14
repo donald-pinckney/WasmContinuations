@@ -36,5 +36,5 @@
 	branch = master
 [submodule "go-benchmarking"]
 	path = go-benchmarking
-	url = https://github.com/donald-pinckney/go-benchmarking
+	url = https://github.com/plasma-umass/go-benchmarking
 	branch = master
