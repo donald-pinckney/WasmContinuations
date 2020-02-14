@@ -1,4 +1,4 @@
-module TDOP
+module Frontend.TDOP
 
 import Data.String
 

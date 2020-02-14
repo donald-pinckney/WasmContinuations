@@ -1,4 +1,4 @@
-module Utils
+module Misc.Utils
 
 import Data.Vect
 import Data.Fin

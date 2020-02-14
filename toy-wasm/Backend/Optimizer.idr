@@ -1,7 +1,7 @@
-module Optimizer
+module Backend.Optimizer
 
 import LangDefs.WasmAST
-import Utils
+import Misc.Utils
 
 %default covering
 

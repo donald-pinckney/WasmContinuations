@@ -1,8 +1,8 @@
-module ParseUtils
+module Frontend.ParseUtils
 
 import Data.Vect
 
-import Utils
+import Misc.Utils
 
 %default covering
 

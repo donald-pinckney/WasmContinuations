@@ -1,8 +1,8 @@
-module ToyInterp
+module LangDefs.ToyInterp
 
 import LangDefs.ToyAST
 
-import Utils
+import Misc.Utils
 
 import Data.Vect
 import Data.Fin

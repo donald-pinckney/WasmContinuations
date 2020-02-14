@@ -1,4 +1,4 @@
-module Tokenizer
+module Frontend.Tokenizer
 
 import Frontend.TDOP
 

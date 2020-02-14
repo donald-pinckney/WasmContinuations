@@ -1,4 +1,4 @@
-module ToyAST
+module LangDefs.ToyAST
 
 import Data.Fin
 import Data.Vect

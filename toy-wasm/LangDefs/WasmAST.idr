@@ -1,4 +1,4 @@
-module WasmAST
+module LangDefs.WasmAST
 
 %default covering
 

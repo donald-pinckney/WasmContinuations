@@ -1,10 +1,10 @@
-module TypeCheck
+module Frontend.TypeCheck
 
 import Frontend.Parser
 
 import LangDefs.ToyAST
 
-import Utils
+import Misc.Utils
 
 import Data.Vect
 import Data.Fin

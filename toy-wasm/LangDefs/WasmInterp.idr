@@ -1,8 +1,8 @@
-module WasmInterp
+module LangDefs.WasmInterp
 
 import LangDefs.WasmAST
 
-import Utils
+import Misc.Utils
 
 import Data.Bits
 
@@ -227,7 +227,20 @@ mutual
     interp_instr mod frame stack labels after WasmInstrI64TruncF64_s = Right (frame, !(interp_unop WasmTypeF64 WasmTypeI64 cast stack))
     interp_instr mod frame stack labels after WasmInstrF64ConvertI32_s = Right (frame, !(interp_unop WasmTypeI32 WasmTypeF64 cast stack))
     interp_instr mod frame stack labels after WasmInstrF64ConvertI64_s = Right (frame, !(interp_unop WasmTypeI64 WasmTypeF64 cast stack))
-    interp_instr mod frame stack labels after WasmInstrF64Eqz = Right (frame, !(interp_unop WasmTypeF64 WasmTypeI32 float_eqz stack))
+    interp_instr mod frame stack labels after WasmInstrF64Neq = Right (frame, !(interp_binop WasmTypeF64 WasmTypeI32 (bool_to_int `comp2` (/=)) stack))
+    interp_instr mod frame stack labels after WasmInstrI32Add = Right (frame, !(interp_binop WasmTypeI32 WasmTypeI32 (+) stack))
+    interp_instr mod frame stack labels after WasmInstrI32Sub = Right (frame, !(interp_binop WasmTypeI32 WasmTypeI32 (-) stack))
+
+    interp_instr mod frame stack labels after (WasmInstrLoad t offset) = ?loadInterp
+    interp_instr mod frame stack labels after (WasmInstrStore t offset) = ?storeInterp
+
+    interp_instr mod frame stack labels after (WasmInstrGlobalGet g) = ?globalGetInterp
+    interp_instr mod frame stack labels after (WasmInstrGlobalSet g) = ?globalSetInterp
+
+    interp_instr mod frame stack labels after (WasmInstrCallSpecial f) = ?callSpecialInterp
+
+
+
 
     public export
     interp_instrs : (mod : WasmModule) -> (frame : State) -> (stack : List WasmValue) -> (labels : List Label) -> (instrs : List WasmInstr) -> Result (State, List WasmValue)
@@ -251,8 +264,8 @@ mutual
 
 public export
 interp_module : WasmModule -> Result WasmValue
-interp_module mod@(MkWasmModule funcs start st) = do
-    start_f <- lookup_list start funcs
+interp_module mod@(MkWasmModule funcs startId func_imports globals memory) = do
+    start_f <- lookup_list startId funcs
     if length (paramTypes start_f) /= 0
         then Left "Start function should take no arguments"
         else interp_call mod start_f []

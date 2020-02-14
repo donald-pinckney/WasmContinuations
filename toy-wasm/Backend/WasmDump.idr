@@ -1,4 +1,4 @@
-module WasmDump
+module Backend.WasmDump
 
 import LangDefs.WasmAST
 

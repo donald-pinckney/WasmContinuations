@@ -1,11 +1,11 @@
-module Parser
+module Frontend.Parser
 
 import Frontend.TDOP
 import Frontend.Tokenizer
 
 import LangDefs.ToyAST
 
-import Utils
+import Misc.Utils
 
 %default covering
 

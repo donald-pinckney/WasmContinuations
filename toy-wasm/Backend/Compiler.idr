@@ -1,15 +1,29 @@
-module Compiler
+module Backend.Compiler
 
 import LangDefs.ToyAST
 import LangDefs.WasmAST
 import Backend.Optimizer
 
-import Utils
+import Misc.Utils
 
 import Data.Vect
 import Data.Fin
 
 %default covering
+
+STACK_SIZE : Int
+STACK_SIZE = 65536
+
+data Region = RegionStack
+
+regionOffset : Region -> Int
+regionOffset RegionStack = 0
+
+loadInstr : WasmType -> (offset : Int) -> Region -> WasmInstr
+loadInstr t offset reg = WasmInstrLoad t (offset + regionOffset reg)
+
+storeInstr : WasmType -> (offset : Int) -> Region -> WasmInstr
+storeInstr t offset reg = WasmInstrStore t (offset + regionOffset reg)
 
 valueToWasmValue : (v : Value) -> Not (typeOfValue v = TypeUnit) -> WasmValue
 valueToWasmValue (ValueInt x) prf = WasmValueI64 x
@@ -115,7 +129,7 @@ mutual
                 | Nothing => assert_unreachable -- hack, but ok for now.
             in
             let wasm_local_type = compile_type toy_local not_unit in
-            ([WasmInstrLocalGet 0, WasmInstrLoad wasm_local_type (8*local_id)], numBound)
+            ([WasmInstrLocalGet 0, loadInstr wasm_local_type (8*local_id) RegionStack], numBound)
         else
             ([WasmInstrLocalGet local_id], numBound)
 
@@ -124,7 +138,7 @@ mutual
         let (a_instrs, numBound'') = compile_expr heap_stack fn_defs fn_idx (1 + numBound') after in
         if heap_stack then
             let wasm_local_type = compile_type t not_unit in
-            ([WasmInstrLocalGet 0] ++ i_instrs ++ [WasmInstrStore wasm_local_type (8*numBound')] ++ a_instrs, numBound'')
+            ([WasmInstrLocalGet 0] ++ i_instrs ++ [storeInstr wasm_local_type (8*numBound') RegionStack] ++ a_instrs, numBound'')
         else
             (i_instrs ++ (WasmInstrLocalSet numBound' :: a_instrs), numBound'')
 
@@ -139,7 +153,7 @@ mutual
                 | Nothing => assert_unreachable -- hack, but ok for now.
             in
             let wasm_local_type = compile_type toy_local not_unit in
-            ([WasmInstrLocalGet 0] ++ n_instrs ++ [WasmInstrStore wasm_local_type (8*localSlot)] ++ a_instrs, numBound'')
+            ([WasmInstrLocalGet 0] ++ n_instrs ++ [storeInstr wasm_local_type (8*localSlot) RegionStack] ++ a_instrs, numBound'')
         else
             (n_instrs ++ (WasmInstrLocalSet localSlot :: a_instrs), numBound'')
 
@@ -156,7 +170,7 @@ mutual
                                                     WasmInstrLocalGet 0,
                                                     WasmInstrConst (WasmValueI32 (8*(num_args + num_locals))),
                                                     WasmInstrI32Sub
-                                                ] ++ ins ++ [WasmInstrStore wasm_at (8*i)], b',i+1)
+                                                ] ++ ins ++ [storeInstr wasm_at (8*i) RegionStack], b',i+1)
                                             else
                                                 (instrs ++ ins, b',i+1)
                                     ) (the (List WasmInstr) [], numBound, the Int 0) (zip args arg_types) in
@@ -164,9 +178,9 @@ mutual
             let read_ret =
             (
                 case returnType f_def of
-                    TypeInt => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, WasmInstrLoad WasmTypeI64 0]
-                    TypeDouble => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, WasmInstrLoad WasmTypeF64 0]
-                    TypeBool => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, WasmInstrLoad WasmTypeI32 0]
+                    TypeInt => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, loadInstr WasmTypeI64 0 RegionStack]
+                    TypeDouble => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, loadInstr WasmTypeF64 0 RegionStack]
+                    TypeBool => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, loadInstr WasmTypeI32 0 RegionStack]
                     TypeUnit => [WasmInstrDrop]
             ) in
 
@@ -304,9 +318,9 @@ compile_function True fn_defs id f_def@(MkFuncDef returnType argumentTypes body)
     let epilogue_ret_val : List WasmInstr =
     (
         case returnType of
-            TypeInt => [WasmInstrStore WasmTypeI64 0]
-            TypeDouble => [WasmInstrStore WasmTypeF64 0]
-            TypeBool => [WasmInstrStore WasmTypeI32 0]
+            TypeInt => [storeInstr WasmTypeI64 0 RegionStack]
+            TypeDouble => [storeInstr WasmTypeF64 0 RegionStack]
+            TypeBool => [storeInstr WasmTypeI32 0 RegionStack]
             TypeUnit => [WasmInstrDrop]
     ) in
     MkWasmFunction
@@ -338,15 +352,15 @@ compile_module heap_stack (MkModule functions) =
     let read_ret_instrs =
     (
         case returnType main_f of
-            TypeInt => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, WasmInstrLoad WasmTypeI64 0]
-            TypeDouble => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, WasmInstrLoad WasmTypeF64 0]
-            TypeBool => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, WasmInstrLoad WasmTypeI32 0]
+            TypeInt => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, loadInstr WasmTypeI64 0 RegionStack]
+            TypeDouble => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, loadInstr WasmTypeF64 0 RegionStack]
+            TypeBool => [WasmInstrConst (WasmValueI32 8), WasmInstrI32Sub, loadInstr WasmTypeI32 0 RegionStack]
             TypeUnit => [WasmInstrDrop]
     ) in
 
     let wasm_start_body = if heap_stack then
         [
-            WasmInstrConst (WasmValueI32 (65536 - 8*main_locals)),
+            WasmInstrConst (WasmValueI32 (STACK_SIZE - 8*main_locals)),
             WasmInstrGlobalSet 0
         ] ++ call_instrs ++ [WasmInstrGlobalGet 0] ++ read_ret_instrs ++ log_instrs
     else

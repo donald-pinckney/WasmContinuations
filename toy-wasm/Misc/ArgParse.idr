@@ -1,3 +1,5 @@
+module Misc.ArgParse
+
 import public Control.Monad.State
 
 matchFlag' : String -> List String -> (Bool, List String)

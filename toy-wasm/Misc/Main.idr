@@ -1,4 +1,4 @@
-module Main
+module Misc.Main
 
 import LangDefs.ToyAST
 import LangDefs.WasmAST
@@ -12,7 +12,7 @@ import Backend.Optimizer
 import Backend.WasmDump
 
 import System
-import ArgParse
+import Misc.ArgParse
 
 %default covering
 
