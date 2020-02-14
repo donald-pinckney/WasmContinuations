@@ -1,0 +1,25 @@
+Benchmark,Runtime,Time,Build.command,Exec.command
+pi_no_thread,Go,.4740,go install pi_no_thread,bin/pi_no_thread 100000000
+pi_no_thread,Go Wasm,1.731,echo 'GOOS=js GOARCH=wasm go install pi_no_thread' | bash,/usr/local/go/misc/wasm/go_js_wasm_exec bin/js_wasm/pi_no_thread 100000000
+pi_no_thread,clang,2.445,clang pi_no_thread.c -o pi_no_thread_c,./pi_no_thread_c 100000000
+pi_no_thread,clang -O3,0.456,clang pi_no_thread.c -O3 -o pi_no_thread_c_o3,./pi_no_thread_c_o3 100000000
+pi_no_thread,emcc,1.708,echo 'source ~/random_deps/emsdk/emsdk_env.sh;emcc pi_no_thread.c -s WASM=1' | bash,node a.out.js 100000000
+pi_no_thread,emcc -O3,0.503,echo 'source ~/random_deps/emsdk/emsdk_env.sh;emcc pi_no_thread.c -O3 -s WASM=1' | bash,node a.out.js 100000000
+pi_no_thread,Toy,0.569,../toy-wasm/toyc ../toy-wasm/TestPrograms/pi.toy -O -o pi_no_thread_toy_O,node ../toy-wasm/wrapper.js pi_no_thread_toy_O.wasm
+pi_no_thread,Toy Heap,1.259,../toy-wasm/toyc ../toy-wasm/TestPrograms/pi.toy -O --heap-stack -o pi_no_thread_toy_O,node ../toy-wasm/wrapper.js pi_no_thread_toy_O.wasm
+hailstone,Go,2.696,go install hailstone,bin/hailstone 10000000
+hailstone,Go Wasm,8.801,echo 'GOOS=js GOARCH=wasm go install hailstone' | bash,/usr/local/go/misc/wasm/go_js_wasm_exec bin/js_wasm/hailstone 10000000
+hailstone,clang,5.956,clang hailstone.c -o hailstone_c,./hailstone_c 10000000
+hailstone,clang -O3,2.201,clang hailstone.c -O3 -o hailstone_c_o3,./hailstone_c_o3 10000000
+hailstone,emcc,6.339,echo 'source ~/random_deps/emsdk/emsdk_env.sh;emcc hailstone.c -s WASM=1' | bash,node a.out.js 10000000
+hailstone,emcc -O3,3.753,echo 'source ~/random_deps/emsdk/emsdk_env.sh;emcc hailstone.c -O3 -s WASM=1' | bash,node a.out.js 10000000
+hailstone,Toy,3.932,../toy-wasm/toyc ../toy-wasm/TestPrograms/hailstone.toy -O -o hailstone_toy_O,node ../toy-wasm/wrapper.js hailstone_toy_O.wasm
+hailstone,Toy Heap,5.62,../toy-wasm/toyc ../toy-wasm/TestPrograms/hailstone.toy -O --heap-stack -o hailstone_toy_O_HS,node ../toy-wasm/wrapper.js hailstone_toy_O_HS.wasm
+hailstone_rec,Go,10.762,go install hailstone_rec,bin/hailstone_rec 10000000
+hailstone_rec,Go Wasm,25.582,echo 'GOOS=js GOARCH=wasm go install hailstone_rec' | bash,/usr/local/go/misc/wasm/go_js_wasm_exec bin/js_wasm/hailstone_rec 10000000
+hailstone_rec,clang,11.523,clang hailstone_rec.c -o hailstone_rec_c,./hailstone_rec_c 10000000
+hailstone_rec,clang -O3,8.127,clang hailstone_rec.c -O3 -o hailstone_rec_c_o3,./hailstone_rec_c_o3 10000000
+hailstone_rec,emcc,20.296,echo 'source ~/random_deps/emsdk/emsdk_env.sh;emcc hailstone_rec.c -s WASM=1' | bash,node a.out.js 10000000
+hailstone_rec,emcc -O3,10.176,echo 'source ~/random_deps/emsdk/emsdk_env.sh;emcc hailstone_rec.c -O3 -s WASM=1' | bash,node a.out.js 10000000
+hailstone_rec,Toy,9.121,../toy-wasm/toyc ../toy-wasm/TestPrograms/hailstone_rec.toy -O -o hailstone_rec_toy_O,node ../toy-wasm/wrapper.js hailstone_rec_toy_O.wasm
+hailstone_rec,Toy Heap,15.719,../toy-wasm/toyc ../toy-wasm/TestPrograms/hailstone_rec.toy -O --heap-stack -o hailstone_rec_toy_O_HS,node ../toy-wasm/wrapper.js hailstone_rec_toy_O_HS.wasm

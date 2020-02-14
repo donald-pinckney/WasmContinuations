@@ -346,7 +346,7 @@ compile_module heap_stack (MkModule functions) =
 
     let wasm_start_body = if heap_stack then
         [
-            WasmInstrConst (WasmValueI32 (1024 - 8*main_locals)),
+            WasmInstrConst (WasmValueI32 (65536 - 8*main_locals)),
             WasmInstrGlobalSet 0
         ] ++ call_instrs ++ [WasmInstrGlobalGet 0] ++ read_ret_instrs ++ log_instrs
     else

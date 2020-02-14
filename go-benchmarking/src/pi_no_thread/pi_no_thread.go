@@ -8,7 +8,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"strconv"
 	"time"
@@ -46,5 +45,6 @@ func pi(numTerms int) float64 {
 }
 
 func term(k float64) float64 {
-	return 4 * math.Pow(-1, k) / (2*k + 1)
+	sign := 2 * -(int(k) % 2 ) + 1
+	return float64(4 * sign) / (2*k + 1)
 }

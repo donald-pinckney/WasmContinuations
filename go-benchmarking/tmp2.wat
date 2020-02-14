@@ -1,3 +1,6 @@
+(module
+  ;; (global i32 (i32.const 0))
+
 (func $main.other_thing (type 0) (param i32) (result i32)
     (local i32)
     (local.set 1
@@ -168,3 +171,4 @@
             (i32.const 0))))
       (unreachable))
     (i32.const 1))
+)
