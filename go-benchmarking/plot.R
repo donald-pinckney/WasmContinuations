@@ -1,5 +1,7 @@
 #!/usr/local/bin/Rscript
 
+library(ggplot2)
+
 data <- read.csv('results.csv')
 data <- data[!(names(data) %in% c("Build.command", "Exec.command"))]
 data <- data[data['Runtime'] != "clang" & data["Runtime"] != "emcc",]
