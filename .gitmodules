@@ -38,3 +38,7 @@
 	path = go-benchmarking
 	url = https://github.com/plasma-umass/go-benchmarking
 	branch = master
+[submodule "emcc_control"]
+	path = emcc_control
+	url = https://github.com/plasma-umass/emcc_control
+	branch = master
