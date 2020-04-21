@@ -69,17 +69,7 @@ fn main() -> Result<(), Error> {
     println!("Creating callback...");
     let print_type = FuncType::new(Box::new([ValType::I32]), Box::new([]));
 
-    let callback = PrintCallback(5);
-    let callback_rc = Rc::new(callback);
-    // callback_rc.modify();
-    // {
-    //     // let mut d = callback_rc.borrow_mut();
-    // }
-    let print_func = HostRef::new(Func::new(store.clone(), print_type, callback_rc));
-    // {
-    //     let mut d = print_func.borrow_mut();
-
-    // }
+    let print_func = HostRef::new(Func::new(store.clone(), print_type, Rc::new(PrintCallback(5))));
 
     // Instantiate.
     println!("Instantiating module...");
@@ -90,7 +80,6 @@ fn main() -> Result<(), Error> {
 
     // Extract export.
     println!("Extracting export...");
-    // let test = unsafe { THE_INST.unwrap().borrow() };
     let exports = Ref::map(get_inst().borrow(), |instance| instance.exports());
     if exports.len() == 0 {
         bail!("> Error accessing exports!");
@@ -98,14 +87,6 @@ fn main() -> Result<(), Error> {
     let run_func = exports[0]
         .func()
         .ok_or_else(|| format_err!("> Error accessing exports!"))?;
-
-    // let inc_func = exports[1]
-    //     .func()
-    //     .ok_or_else(|| format_err!("> Error accessing exports!"))?;
-
-    // let inc_f = run_func.borrow();
-
-    // unsafe { STUFF = Some(inc_func); }
 
     // Call.
     println!("Calling export...");
