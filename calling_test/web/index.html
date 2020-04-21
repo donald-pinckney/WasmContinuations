@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+    <title>Wasm Testing</title>
+</head>
+
+<body>
+    <script type="text/javascript">
+        var savedInst;
+
+        function output(x) {
+            document.getElementById("output").innerHTML = savedInst.exports.increment(x);
+        }
+        
+        function instantiate(bytes, imports) {
+            return WebAssembly.compile(bytes).then(m => new WebAssembly.Instance(m, imports));
+        }
+
+        function doMain(inst) {
+            savedInst = inst;
+            inst.exports.main();
+        }
+        var importObject = { imports: { print_i32: arg => output(arg) } };
+
+        fetch('test.wasm')
+            .then(response => response.arrayBuffer())
+            .then(bytes => instantiate(bytes, importObject))
+            .then(doMain);
+
+        //alert("hi!");
+    </script>
+    <h1 id="output"></h1>
+</body>
+
+</html>
