@@ -8,14 +8,9 @@ use failure::{bail, format_err, Error};
 use std::fs::read;
 use wasmtime_api::*;
 use std::rc::Rc;
-use std::cell::RefCell;
-
-struct PrintCallback(i32);
 
 
 static mut __THE_INST: Option<HostRef<Instance>> = None;
-// static mut THE_INST: Option<&'static mut HostRef<Instance>> = None;
-static mut STUFF: Option<&HostRef<Func>> = None;
 
 fn get_inst() -> &'static mut HostRef<Instance> {
     unsafe { 
@@ -29,6 +24,8 @@ fn get_inst() -> &'static mut HostRef<Instance> {
 fn set_inst(i: HostRef<Instance>) {
     unsafe { __THE_INST = Some(i); }
 }
+
+struct PrintCallback(i32);
 
 impl Callable for PrintCallback {
     fn call(&self, params: &[Val], _results: &mut [Val]) -> Result<(), HostRef<Trap>> {
