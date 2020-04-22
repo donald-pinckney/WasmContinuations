@@ -25,6 +25,20 @@ fn set_inst(i: HostRef<Instance>) {
     unsafe { __THE_INST = Some(i); }
 }
 
+
+
+struct Droppable {
+    name: &'static str,
+}
+
+// This trivial implementation of `drop` adds a print to console.
+impl Drop for Droppable {
+    fn drop(&mut self) {
+        println!(">>> Dropping {}", self.name);
+    }
+}
+
+
 struct PrintCallback(i32);
 
 impl Callable for PrintCallback {
@@ -32,6 +46,8 @@ impl Callable for PrintCallback {
         // let STUFF_val = unsafe { STUFF };
         let exports = Ref::map(get_inst().borrow(), |instance| instance.exports());
         let inc_func = exports[1].func().unwrap();
+
+        let _drop = Droppable { name: "drop_me" };
 
         match params[0] {
             Val::I32(x) => {
@@ -55,8 +71,11 @@ fn main() -> Result<(), Error> {
     let store = HostRef::new(Store::new(engine));
 
     // Load binary.
+
+    let args: Vec<String> = std::env::args().collect();
+
     println!("Loading binary...");
-    let binary = read("hello.wasm")?;
+    let binary = read(&args[1])?;
 
     // Compile.
     println!("Compiling module...");
