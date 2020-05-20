@@ -51,6 +51,7 @@ impl Callable for PrintCallback {
 
         match params[0] {
             Val::I32(x) => {
+                println!("Going to call increment...");
                 match inc_func.borrow().call(&[Val::I32(x)]).expect("bad")[0] {
                     Val::I32(inc_res) => {
                         println!("> {}", inc_res)
