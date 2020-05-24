@@ -6,7 +6,7 @@ gpass="$2"
 apt-get update
 apt-get install clang -y
 apt-get install cmake -y
-# apt-get install r-base -y
+apt-get install r-base -y
 
 echo 'export CC=/usr/bin/clang' >> /home/vagrant/.profile
 echo 'export CXX=/usr/bin/clang++' >> /home/vagrant/.profile
