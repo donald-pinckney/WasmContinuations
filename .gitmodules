@@ -14,10 +14,6 @@
 	path = swasm
 	url = https://github.com/donald-pinckney/swasm
 	branch = master
-[submodule "wabt"]
-	path = wabt
-	url = https://github.com/WebAssembly/wabt
-	branch = master
 [submodule "wasmparser.rs"]
 	path = wasmparser.rs
 	url = https://github.com/donald-pinckney/wasmparser.rs
