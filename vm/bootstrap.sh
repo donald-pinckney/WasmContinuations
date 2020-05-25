@@ -9,6 +9,8 @@ apt-get install cmake -y
 apt-get install r-base -y
 apt-get install default-jre -y
 
+Rscript -e 'install.packages(c("ggplot2", "dplyr"))'
+
 echo 'export CC=/usr/bin/clang' >> /home/vagrant/.profile
 echo 'export CXX=/usr/bin/clang++' >> /home/vagrant/.profile
 
@@ -27,6 +29,7 @@ echo 'export PATH="$HOME/WasmContinuations/emcc_control/build-tools:$PATH"' >> /
 echo 'export PATH="$HOME/WasmContinuations/wabt-rs/wabt-sys/wabt/bin:$PATH"' >> /home/vagrant/.profile
 
 echo 'alias emsdk_setup="source /home/vagrant/emsdk/emsdk_env.sh"' >> /home/vagrant/.bash_aliases
+echo 'alias exp_uthreads="Scripts/uthreads/experiment.R; Scripts/uthreads/plot.R; cp -R Results/ /vagrant"' >> /home/vagrant/.bash_aliases
 
 su vagrant -c 'bash /vagrant/install_em.sh'
 
