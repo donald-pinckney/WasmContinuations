@@ -24,6 +24,8 @@ popd
 su vagrant -c 'bash /vagrant/build.sh'
 
 echo 'export PATH="$HOME/WasmContinuations/emcc_control/build-tools:$PATH"' >> /home/vagrant/.profile
+echo 'export PATH="$HOME/WasmContinuations/wabt-rs/wabt-sys/wabt/bin:$PATH"' >> /home/vagrant/.profile
+
 echo 'alias emsdk_setup="source /home/vagrant/emsdk/emsdk_env.sh"' >> /home/vagrant/.bash_aliases
 
 su vagrant -c 'bash /vagrant/install_em.sh'
