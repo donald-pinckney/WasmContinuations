@@ -1,36 +1,36 @@
 [submodule "wabt-rs"]
 	path = wabt-rs
-	url = https://github.com/donald-pinckney/wabt-rs
+	url = git@github.com:donald-pinckney/wabt-rs
 	branch = conts
 [submodule "c-stack"]
 	path = c-stack
-	url = https://github.com/donald-pinckney/c-stack
+	url = git@github.com:donald-pinckney/c-stack
 	branch = conts
 [submodule "cranelift"]
 	path = cranelift
-	url = https://github.com/donald-pinckney/cranelift
+	url = git@github.com:donald-pinckney/cranelift
 	branch = conts
 [submodule "swasm"]
 	path = swasm
-	url = https://github.com/donald-pinckney/swasm
+	url = git@github.com:donald-pinckney/swasm
 	branch = master
 [submodule "wasmparser.rs"]
 	path = wasmparser.rs
-	url = https://github.com/donald-pinckney/wasmparser.rs
+	url = git@github.com:donald-pinckney/wasmparser.rs
 	branch = conts
 [submodule "wasmtime"]
 	path = wasmtime
-	url = https://github.com/donald-pinckney/wasmtime
+	url = git@github.com:donald-pinckney/wasmtime
 	branch = conts
 [submodule "toy-wasm"]
 	path = toy-wasm
-	url = https://github.com/plasma-umass/toy-wasm
+	url = git@github.com:plasma-umass/toy-wasm
 	branch = master
 [submodule "go-benchmarking"]
 	path = go-benchmarking
-	url = https://github.com/plasma-umass/go-benchmarking
+	url = git@github.com:plasma-umass/go-benchmarking
 	branch = master
 [submodule "emcc_control"]
 	path = emcc_control
-	url = https://github.com/plasma-umass/emcc_control
+	url = git@github.com:plasma-umass/emcc_control
 	branch = master
