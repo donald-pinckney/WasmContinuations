@@ -34,3 +34,7 @@
 	path = emcc_control
 	url = git@github.com:plasma-umass/emcc_control
 	branch = master
+[submodule "c-ray"]
+	path = c-ray
+	url = https://github.com/donald-pinckney/c-ray
+	branch = wasm
