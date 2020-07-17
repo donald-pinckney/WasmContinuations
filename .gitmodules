@@ -2,18 +2,10 @@
 	path = wabt-rs
 	url = git@github.com:donald-pinckney/wabt-rs
 	branch = conts
-[submodule "c-stack"]
-	path = c-stack
-	url = git@github.com:donald-pinckney/c-stack
-	branch = conts
 [submodule "cranelift"]
 	path = cranelift
 	url = git@github.com:donald-pinckney/cranelift
 	branch = conts
-[submodule "swasm"]
-	path = swasm
-	url = git@github.com:donald-pinckney/swasm
-	branch = master
 [submodule "wasmparser.rs"]
 	path = wasmparser.rs
 	url = git@github.com:donald-pinckney/wasmparser.rs
@@ -22,10 +14,6 @@
 	path = wasmtime
 	url = git@github.com:donald-pinckney/wasmtime
 	branch = conts
-[submodule "toy-wasm"]
-	path = toy-wasm
-	url = git@github.com:plasma-umass/toy-wasm
-	branch = master
 [submodule "go-benchmarking"]
 	path = go-benchmarking
 	url = git@github.com:plasma-umass/go-benchmarking
