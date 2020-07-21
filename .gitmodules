@@ -1,28 +1,28 @@
 [submodule "wabt-rs"]
 	path = wabt-rs
-	url = git@github.com:donald-pinckney/wabt-rs
+    url = https://github.com/donald-pinckney/wabt-rs
 	branch = conts
 [submodule "cranelift"]
 	path = cranelift
-	url = git@github.com:donald-pinckney/cranelift
+    url = https://github.com/donald-pinckney/cranelift
 	branch = conts
 [submodule "wasmparser.rs"]
 	path = wasmparser.rs
-	url = git@github.com:donald-pinckney/wasmparser.rs
+    url = https://github.com/donald-pinckney/wasmparser.rs
 	branch = conts
 [submodule "wasmtime"]
 	path = wasmtime
-	url = git@github.com:donald-pinckney/wasmtime
+    url = https://github.com/donald-pinckney/wasmtime
 	branch = conts
 [submodule "go-benchmarking"]
 	path = go-benchmarking
-	url = git@github.com:plasma-umass/go-benchmarking
+    url = https://github.com/plasma-umass/go-benchmarking
 	branch = master
 [submodule "emcc_control"]
 	path = emcc_control
-	url = git@github.com:plasma-umass/emcc_control
+    url = https://github.com/plasma-umass/emcc_control
 	branch = master
 [submodule "c-ray"]
 	path = c-ray
-	url = https://github.com/donald-pinckney/c-ray
+    url = https://github.com/donald-pinckney/c-ray
 	branch = wasm
